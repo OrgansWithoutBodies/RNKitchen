@@ -1,15 +1,13 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { StyleSheet, TouchableOpacity, Image } from "react-native";
+import { View, Text, Button } from "../../components/Themed";
+import { dataQuery, DataQuery } from "../../state/data.query";
+import { dataService } from "../../state/data.service";
 import {
-  View,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  Button,
-  Image,
-} from "react-native";
-import { dataQuery, DataQuery } from "./data.query";
-import { existingProducts } from "./data.store";
-import { ExistingProductDetails, Recipe, Units } from "./types";
+  ExistingProductDetails,
+  RecipeBuddyRecipe,
+  Units,
+} from "../../structs/types";
 
 const degrees = [
   "thin",
@@ -46,10 +44,11 @@ const processeds = [
 const optionalStr = "optional";
 type ParsedIngredient = {
   unit?: (typeof Units)[number];
-  num: number;
+  numUnitPerServing: number;
   ingredient: string;
   isOptional: boolean;
 };
+// TODO parsed ingredient name vs shopping list ingredient name
 // TODO different plural unit name
 function parseIngredientUsage(str: string): string {
   const preformattedStr = str.toLowerCase().replace("  ", " ");
@@ -96,12 +95,24 @@ export default function RecipeCard({
   shoppingList,
   addToShoppingList,
 }: {
-  recipe: Recipe;
+  recipe: RecipeBuddyRecipe;
   expanded: boolean;
   setExpanded: (expand: boolean) => void;
   shoppingList: string[];
   addToShoppingList: (item: string) => void;
 }) {
+  const [existingProducts, setExistingProducts] = useState<
+    Record<string, ExistingProductDetails>
+  >({});
+  const existingProductsObservable = dataQuery["existingProducts"];
+
+  useEffect(() => {
+    existingProductsObservable.subscribe({
+      next(observedValue) {
+        setExistingProducts(observedValue);
+      },
+    });
+  }, []);
   return (
     <View style={styles.item}>
       <TouchableOpacity
@@ -179,7 +190,6 @@ export default function RecipeCard({
                               if (!shoppingList.includes(ingredientName)) {
                                 addToShoppingList(ingredientName);
                               }
-                              console.log(shoppingList);
                             }}
                           >
                             {shoppingList.includes(ingredientName)
@@ -193,7 +203,18 @@ export default function RecipeCard({
                         activeOpacity={0.95}
                         style={styles.button}
                       >
-                        <Text style={styles.text}>Add To Grocy</Text>
+                        <Text
+                          style={styles.text}
+                          onPress={() =>
+                            // TODO populate dummy info
+                            dataService.addToExistingProducts(ingredientName, {
+                              inStockUnit: "cup",
+                              inStockAmount: 2,
+                            })
+                          }
+                        >
+                          Add To Grocy
+                        </Text>
                       </TouchableOpacity>
                     )}
                   </View>

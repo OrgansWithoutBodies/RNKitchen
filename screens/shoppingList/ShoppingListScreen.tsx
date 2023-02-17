@@ -1,9 +1,10 @@
 import axios from "axios";
 import React, { useEffect } from "react";
 import { useState } from "react";
-import { View, Text, Button, TextInput, ToastAndroid } from "react-native";
-import { dataQuery } from "./data.query";
-import { dataService } from "./data.service";
+import { TextInput, ToastAndroid } from "react-native";
+import { View, Text, Button } from "../../components/Themed";
+import { dataQuery } from "../../state/data.query";
+import { dataService } from "../../state/data.service";
 
 export default function ShoppingList() {
   const shoppingListObservable = dataQuery["shoppingList"];
@@ -37,7 +38,6 @@ export default function ShoppingList() {
       <Button
         title="add to list"
         onPress={() => {
-          console.log("TEST123-adding", dataService);
           return dataService.addToShoppingList(undefined);
         }}
       />
@@ -45,12 +45,7 @@ export default function ShoppingList() {
         disabled={shoppingList.includes(undefined) || shoppingList.length === 0}
         title="send list to printer"
         onPress={() => {
-          console.log(shoppingList);
-          axios
-            .post("http://192.168.88.242:8000/printShoppingList", {
-              list: shoppingList,
-            })
-            .catch(() => ToastAndroid.show("Bad Request!", ToastAndroid.SHORT));
+          dataService.sendShoppingListToThermalPrinter();
         }}
       />
     </View>

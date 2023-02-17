@@ -1,45 +1,19 @@
 import { useEffect, useState } from "react";
-import { Button, FlatList, StyleSheet } from "react-native";
+import { FlatList, StyleSheet } from "react-native";
 import axios from "axios";
-import { Text, View } from "../components/Themed";
+import { Text, View, Button } from "../../components/Themed";
 import RecipeCard from "./RecipeCard";
 import React from "react";
-import { Recipe } from "./types";
-import { dataQuery } from "./data.query";
-import { dataService } from "./data.service";
+import { RecipeBuddyRecipe } from "../../structs/types";
+import { dataQuery } from "../../state/data.query";
+import { dataService } from "../../state/data.service";
 
-async function getRecipes(
-  setAccessToken,
-  accessToken
-): Promise<Recipe[] | null> {
-  const recipeBuddyURL = "http://192.168.88.242:4000";
-  if (!accessToken) {
-    const { data } = await axios.post(recipeBuddyURL + "/api/auth/login", {
-      username: "v",
-      password: "testpass",
-    });
-
-    setAccessToken(data.access_token);
-  }
-  const authHeader = {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  };
-  return (
-    (await axios.get(recipeBuddyURL + "/api/recipes", authHeader)).data || null
-  );
-}
-
-const Item = ({ title }) => (
-  <View style={styles.item}>
-    <Text style={styles.title}>{title}</Text>
-  </View>
-);
 export default function GetRecipeScreen() {
   const shoppingListObservable = dataQuery["shoppingList"];
+  const recipesObservable = dataQuery["recipes"];
 
   const [shoppingList, setShoppingList] = useState<(string | undefined)[]>([]);
+  const [recipes, setRecipes] = useState<RecipeBuddyRecipe[] | null>(null);
 
   useEffect(() => {
     shoppingListObservable.subscribe({
@@ -47,10 +21,13 @@ export default function GetRecipeScreen() {
         setShoppingList(observedValue);
       },
     });
+    recipesObservable.subscribe({
+      next(observedValue) {
+        setRecipes(observedValue);
+      },
+    });
   }, []);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
   const [openRecipe, setOpenRecipe] = useState<number | false>(false);
-  const [recipes, setRecipes] = useState<Recipe[] | null>(null);
 
   return (
     <View style={styles.container}>
@@ -59,8 +36,7 @@ export default function GetRecipeScreen() {
       <Button
         title="Check Recipes"
         onPress={async () => {
-          const recipeData = await getRecipes(setAccessToken, accessToken);
-          setRecipes(recipeData);
+          await dataService.getRecipesFromRecipeBuddy();
         }}
       />
       {recipes && (

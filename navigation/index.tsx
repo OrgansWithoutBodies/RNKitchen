@@ -18,18 +18,19 @@ import Colors from "../constants/Colors";
 import useColorScheme from "../hooks/useColorScheme";
 import ModalScreen from "../screens/ModalScreen";
 import NotFoundScreen from "../screens/NotFoundScreen";
-import SettingsScreen from "../screens/SettingsScreen";
-import TabOneScreen from "../screens/TabOneScreen";
+import SettingsScreen from "../screens/settings/SettingsScreen";
+import TabOneScreen from "../screens/recipes/RecipeGridScreen";
 import BarcodeScreen from "../screens/BarcodeScreen";
-import GetRecipeScreen from "../screens/GetRecipeScreen";
+import GetRecipeScreen from "../screens/recipes/GetRecipeScreen";
 import {
   RootStackParamList,
   RootTabParamList,
   RootTabScreenProps,
 } from "../types";
 import LinkingConfiguration from "./LinkingConfiguration";
-import MealPlanner from "../screens/MealPlanner";
-import ShoppingList from "../screens/ShoppingListScreen";
+import MealPlanner from "../screens/mealPlan/MealPlanner";
+import ShoppingList from "../screens/shoppingList/ShoppingListScreen";
+import GetRestaurantsScreen from "../screens/restaurant/RestaurantsScreen";
 
 // TODO stores (separate shopping list by stores, receipt structure for scanning)
 // TODO nutrition & pinewatch data?
@@ -156,6 +157,14 @@ function BottomTabNavigator() {
         options={{
           title: "Location",
           tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+        }}
+      />
+      <BottomTab.Screen
+        name="menusTab"
+        component={GetRestaurantsScreen}
+        options={{
+          title: "Restaurants",
+          tabBarIcon: ({ color }) => <TabBarIcon name="gear" color={color} />,
         }}
       />
       <BottomTab.Screen
