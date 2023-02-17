@@ -10,41 +10,17 @@ import {
   StorageLocation,
 } from "../state/data.store";
 import { GrocyProduct } from "../structs/types";
+import { useAkita } from "../state/useAkita";
+import { dataService } from "../state/data.service";
 
 export default function LocationScreen() {
-  const [locationProducts, setLocationProducts] = useState<ProductsInLocation>(
-    {}
-  );
-  const [locations, setLocations] = useState<StorageLocation[]>([]);
-  const [products, setProducts] = useState<GrocyProduct[]>([]);
-
-  const locationProductsObservable = dataQuery["productsInLocations"];
-  const locationsObservable = dataQuery["locations"];
-  const productsObservable = dataQuery["products"];
-
-  useEffect(() => {
-    locationProductsObservable.subscribe({
-      next(observedValue) {
-        setLocationProducts(observedValue);
-      },
-      error(errorVal) {
-        console.log("TEST123", errorVal);
-      },
-    });
-    locationsObservable.subscribe({
-      next(observedValue) {
-        setLocations(observedValue);
-      },
-      error(errorVal) {},
-    });
-    productsObservable.subscribe({
-      next(observedValue) {
-        setProducts(observedValue);
-      },
-      error(errorVal) {},
-    });
-  }, []);
-  // console.log("TEST123", locationProducts);
+  const [{ productsInLocations: locationProducts, locations, products }] =
+    useAkita(dataQuery, dataService, [
+      "productsInLocations",
+      "locations",
+      "products",
+    ]);
+  console.log("TEST123", locations);
   return (
     <View>
       {locations.map((location) => {
@@ -52,7 +28,8 @@ export default function LocationScreen() {
           <View>
             <Text style={{ fontSize: 20 }}>{location.name}</Text>
             <View>
-              {locationProducts[location.id! as LocationId] &&
+              {locationProducts &&
+                locationProducts[location.id! as LocationId] &&
                 locationProducts[location.id! as LocationId].map(
                   (locationProduct) => {
                     return (
