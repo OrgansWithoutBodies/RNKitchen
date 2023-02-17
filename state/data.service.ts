@@ -1,8 +1,14 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
 import { ToastAndroid } from "react-native";
-import { dataStore, DataStore, HTTPUrl } from "./data.store";
 import {
-  ExistingProductDetails,
+  dataStore,
+  DataStore,
+  HTTPUrl,
+  LocationId,
+  StorageLocation,
+} from "./data.store";
+import {
+  NaiveExistingProductDetails,
   GrocyProduct,
   GrocyStockPaths,
   IOServerPaths,
@@ -17,7 +23,7 @@ export class DataService {
 
   public addToExistingProducts(
     itemName: string,
-    itemDetails: ExistingProductDetails
+    itemDetails: NaiveExistingProductDetails
   ) {
     this.dataStore.update((store) => {
       return {
@@ -90,6 +96,22 @@ export class DataService {
       .get(rootUrl + path, data)
       .catch(() => ToastAndroid.show("Bad Request!", ToastAndroid.SHORT));
     return test;
+  }
+  // TODO - should we differentiate between Locations & Containers?
+  public addLocation(parentLocation?: LocationId) {
+    const { locations } = this.dataStore.getValue();
+    // TODO make sure all have ids w validator
+    const locationIds = locations
+      .filter((location) => location.id !== undefined)
+      .map((location) => location.id) as number[];
+    const maxId = Math.max(...locationIds);
+    this.dataStore.update((state) => {
+      const newLocation: StorageLocation = {
+        id: maxId + 1,
+        parentLocationId: parentLocation,
+      };
+      return { ...state, locations: [...state.locations, newLocation] };
+    });
   }
 
   public getRecipesFromTandoor() {}

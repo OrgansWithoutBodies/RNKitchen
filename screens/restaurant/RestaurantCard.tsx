@@ -5,7 +5,7 @@ import { View, Text, Button } from "../../components/Themed";
 import { dataQuery, DataQuery } from "../../state/data.query";
 import { dataService } from "../../state/data.service";
 import {
-  ExistingProductDetails,
+  NaiveExistingProductDetails,
   RecipeBuddyRecipe,
   Units,
 } from "../../structs/types";

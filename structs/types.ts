@@ -46,7 +46,7 @@ export const Units = [
   "unit",
 ] as const;
 
-export type ExistingProductDetails = {
+export type NaiveExistingProductDetails = {
   inStockAmount: number;
   inStockUnit: (typeof Units)[number];
 };
@@ -74,6 +74,7 @@ export type GrocyCurrentStockResponse =
   GrocyAPIComponentSchemas["CurrentStockResponse"];
 
 // IOServer
+// TODO path for ws subscribe
 export type IOServerPaths = keyof IOServerAPIPaths;
 export type IOServerPathsPrintShoppingList =
   IOServerAPIPaths["/printShoppingList"];

@@ -31,6 +31,7 @@ import LinkingConfiguration from "./LinkingConfiguration";
 import MealPlanner from "../screens/mealPlan/MealPlanner";
 import ShoppingList from "../screens/shoppingList/ShoppingListScreen";
 import GetRestaurantsScreen from "../screens/restaurant/RestaurantsScreen";
+import LocationScreen from "../screens/LocationScreen";
 
 // TODO stores (separate shopping list by stores, receipt structure for scanning)
 // TODO nutrition & pinewatch data?
@@ -153,7 +154,7 @@ function BottomTabNavigator() {
       />
       <BottomTab.Screen
         name="locationTab"
-        component={BarcodeScreen}
+        component={LocationScreen}
         options={{
           title: "Location",
           tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,

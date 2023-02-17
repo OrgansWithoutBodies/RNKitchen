@@ -7,25 +7,7 @@ import React from "react";
 import { SocketStarter, useWebSocket } from "../hooks/useWebSocket";
 import { dataQuery } from "../state/data.query";
 
-// async function getRecipes(setAccessToken, accessToken): Promise<Recipe[] | null> {
-//   const recipeBuddyURL = 'http://192.168.88.242:4000'
-//   if (!accessToken) {
-
-// const { data } = await axios.post(recipeBuddyURL + "/api/auth/login", {
-//   username: 'v',
-//   password: 'testpass',
-// });
-
-//     setAccessToken(data.access_token)
-//   }
-//   const authHeader = {
-//     headers: {
-//       Authorization: `Bearer ${accessToken}`,
-//     },
-//   }
-//   return (await axios.get(recipeBuddyURL + "/api/recipes", authHeader)).data || null
-
-// }
+// TODO lookup non-loc barcodes in that openfood thingamajig
 export default function BarcodeScreen() {
   const barcodes = { "12345": "test", "23456": "test123" };
   const [barcode, setBarcode] = useState<string | null>("1245");
@@ -55,33 +37,6 @@ export default function BarcodeScreen() {
   const [relocateCode, setRelocateCode] = useState<string | null>(null);
   const [newBarcodeInfo, setNewBarcodeInfo] = useState<string | null>(null);
 
-  // function parseBarcode(wsData) {
-  // console.log("TEST123", JSON.parse(wsData)["data"]["instance"]["code"]);
-  //   const parsedCode = JSON.parse(wsData["data"])["instance"]["code"];
-  // TODO validate this
-
-  //   setBarcode(parsedCode);
-  // }
-  // TODO teardown websockets
-  // TODO pipe this to observable
-  // const ws = useWebSocket(
-  //   parseBarcode,
-  //   (closemsg) => console.log("TEST123-close", closemsg),
-  //   (error) => console.log("TEST123-error", error)
-  // );
-  useEffect(() => {
-    // https://medium.com/geekculture/a-beginners-guide-to-websockets-in-django-e45e68c68a71
-    // https://blog.logrocket.com/how-to-implement-websockets-in-react-native/
-    // const subscription = AxiosAsync.get(
-    //   "http://192.168.88.242:8000/barcode/"
-    // ).subscribe(
-    //   (response) => {
-    //     setBarcode(response.data[0].code);
-    //   },
-    //   (error) => console.log("ERROR", error)
-    // );
-    // return subscription.unsubscribe;
-  }, []);
   return (
     <View style={styles.container}>
       {newBarcodeInfo && <Text>{newBarcodeInfo}</Text>}

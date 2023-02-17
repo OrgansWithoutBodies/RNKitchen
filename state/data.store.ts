@@ -1,24 +1,45 @@
 import { Store, StoreConfig } from "@datorama/akita";
 import {
-  ExistingProductDetails,
+  NaiveExistingProductDetails,
   GrocyLocation,
   GrocyQuantityUnit,
+  GrocyStockEntry,
   RecipeBuddyRecipe,
+  GrocyProduct,
 } from "../structs/types";
+export type BrandedType<T = any, Brand extends string = string> = T & {
+  __brand: Brand;
+};
+export type BrandedNumber<Brand extends string> = BrandedType<number, Brand>;
+export type BrandedString<Brand extends string> = BrandedType<string, Brand>;
+
+// TODO assign these
+export type LocationId = BrandedNumber<"Location Id">;
+export type ProductId = BrandedNumber<"Product Id">;
+export type EntryId = BrandedNumber<"Entry Id">;
+export type ProductsInLocation = Record<
+  LocationId,
+  { productId: ProductId; countAtLocation: number }[]
+>;
 export type HTTPUrl = `http://${string}` | `https://${string}`;
-export type StorageLocation = GrocyLocation & { parentLocationId: string };
+// TODO maybe add LocationCode here & treat it as purely a local object?
+// cons - would have to persist location data here
+export type StorageLocation = GrocyLocation & { parentLocationId?: LocationId };
 export interface DataState {
-  token: string;
-  name: string;
+  token: string | null;
+  name: string | null;
   ioServerUrl: HTTPUrl;
   recipeBuddyUrl?: HTTPUrl;
+  stockEntries: GrocyStockEntry[];
   recipeBuddyAccessToken?: string;
   grocyUrl?: HTTPUrl;
   grocyAPIKey?: string;
   tandoorUrl?: HTTPUrl;
   recipes: RecipeBuddyRecipe[];
   shoppingList: (string | undefined)[];
-  existingProducts: Record<string, ExistingProductDetails>;
+  // TODO change this type
+  existingProducts: Record<string, NaiveExistingProductDetails>;
+  products: GrocyProduct[];
   locations: StorageLocation[];
   quantityUnits: GrocyQuantityUnit[];
 }
@@ -56,15 +77,30 @@ const LocationCodes: Record<LocContainerCode<any, any>, LocCode<any, any>[]> = {
 };
 
 // TODO parenthetical specification - ie "1 (16 ounce) package"
-export const existingProducts: Record<string, ExistingProductDetails> = {};
 export function createInitialState(): DataState {
   return {
-    token: "",
-    name: "",
+    token: null,
+    name: null,
+    existingProducts: {},
+    products: [
+      { id: 0, name: "egg", description: "test213" },
+      { id: 1, name: "milk", description: "test213" },
+      { id: 2, name: "sugar", description: "test213" },
+    ],
+    stockEntries: [
+      { product_id: 1, location_id: 0, amount: 3, id: 0 },
+      { product_id: 2, location_id: 0, amount: 2, id: 0 },
+      { product_id: 0, location_id: 3, amount: 4, id: 0 },
+      { product_id: 2, location_id: 1, amount: 5, id: 0 },
+    ],
     recipes: [],
     shoppingList: ["Marie Calendars Pot Pies"],
-    existingProducts,
-    locations: [],
+    locations: [
+      { id: 0, name: "Fridge", description: "test1234512312312" },
+      { id: 1, name: "Cabinet", description: "test1234512312312" },
+      { id: 2, name: "Other Cabinet", description: "test1234512312312" },
+      { id: 3, name: "Freezer", description: "test1234512312312" },
+    ],
     quantityUnits: [],
     ioServerUrl: "http://192.168.88.242:8000",
     recipeBuddyUrl: "http://192.168.88.242:4000",

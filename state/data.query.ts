@@ -5,19 +5,24 @@ import {
   DataState,
   dataStore,
   DataStore,
+  LocationId,
   LocCode,
   LocCodePrefix,
   LocContainerCode,
   LocContainerCodePrefix,
+  ProductId,
+  ProductsInLocation,
   StorageLocation,
 } from "./data.store";
 import { SocketStarter } from "../hooks/useWebSocket";
-
+// TODO start splitting this up
 export class DataQuery extends Query<DataState> {
   public shoppingList = this.select("shoppingList");
   public existingProducts = this.select("existingProducts");
   public recipes = this.select("recipes");
   public locations = this.select("locations");
+  public stockEntries = this.select("stockEntries");
+  public products = this.select("products");
 
   public barcodeWebSocket = webSocket<{
     action: string;
@@ -51,20 +56,46 @@ export class DataQuery extends Query<DataState> {
       return code!.startsWith(LocContainerCodePrefix);
     })
   );
-
-  public scannedLocation: Observable<StorageLocation> = combineLatest([
-    this.locations,
-    this.scannedLocationCode,
-    this.scannedLocationContainerCode,
-  ]).pipe(
-    map(([locations, locationCode, locationContainerCode]) => {
-      console.log(locations, locationCode, locationContainerCode);
-      // TODO Grocy LocationCode UserField?
-      locations.find((loc) => loc.id === locationCode);
-    })
-  );
+  public scannedLocation: Observable<StorageLocation | undefined> =
+    combineLatest([
+      this.locations,
+      this.scannedLocationCode,
+      this.scannedLocationContainerCode,
+    ]).pipe(
+      map(([locations, locationCode, locationContainerCode]) => {
+        console.log(locations, locationCode, locationContainerCode);
+        // TODO Grocy LocationCode UserField?
+        return locations.find((loc) => loc.id === locationCode);
+      })
+    );
   public lastEmittedCodeType = this.scannedBarcode;
 
+  public productsInLocations = combineLatest([
+    this.locations,
+    this.stockEntries,
+    this.products,
+  ]).pipe(
+    // TODO this is just a join,
+    map(([locations, stockEntries, products]) => {
+      const entriesMap: ProductsInLocation = {};
+      stockEntries.forEach((entry) => {
+        if (!entriesMap[entry.location_id as LocationId]) {
+          entriesMap[entry.location_id as LocationId] = [
+            {
+              productId: entry.product_id as ProductId,
+              countAtLocation: entry.amount!,
+            },
+          ];
+        } else {
+          entriesMap[entry.location_id as LocationId].push({
+            productId: entry.product_id as ProductId,
+            countAtLocation: entry.amount!,
+          });
+        }
+      });
+      return entriesMap;
+    })
+  );
   constructor(protected store: DataStore) {
     super(store);
   }
