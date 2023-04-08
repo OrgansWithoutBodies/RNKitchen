@@ -17,15 +17,21 @@ import {
 
 import { dataService } from "../../state/data.service";
 import { useData } from "../../state/useAkita";
-import { BrandedNumber, ObjVec2 } from "../../structs/types";
+import {
+  BoardVec2,
+  BrandedNumber,
+  HexStr,
+  ObjVec2,
+  ScreenVec2,
+} from "../../structs/types";
 
-import { BoardPiece, GridBoard } from "./GridBoard";
+import {
+  combineTwoVecs,
+  BoardPiece,
+  GridBoard,
+  positionOffsets,
+} from "./GridBoard";
 
-type BoardSpaceCoord = BrandedNumber<"BoardSpace">;
-type ScreenSpaceCoord = BrandedNumber<"ScreenSpace">;
-
-type BoardVec2 = ObjVec2<BoardSpaceCoord>;
-type ScreenVec2 = ObjVec2<ScreenSpaceCoord>;
 const screenCoordToBoardCoord = (
   screenCoord: ScreenVec2,
   gridSize: number
@@ -35,15 +41,68 @@ const screenCoordToBoardCoord = (
     y: Math.round(screenCoord.y / gridSize) * gridSize,
   } as BoardVec2;
 };
-const checkConflict = (boardPieces: BoardPiece[], movePosition: BoardVec2) => {
-  const foundIndex = boardPieces.findIndex(
-    (piece) =>
-      piece.center.x === movePosition.x && piece.center.y === movePosition.y
-  );
-  if (foundIndex === -1) {
+const twoVecsSame = (vecA: ObjVec2, vecB: ObjVec2): boolean => {
+  return vecA.x === vecB.x && vecA.y === vecB.y;
+};
+const checkCellConflictsPiece = (
+  boardPieces: BoardPiece[],
+  cellPosition: BoardVec2,
+  gridSize: number
+) => {
+  const conflictedPieceIndex = boardPieces.findIndex((piece) => {
+    const { shape, center } = piece;
+    if (shape) {
+      const anyShapeOverlap = shape
+        .map((centerOffset) => {
+          const piecePosition = positionOffsets(
+            centerOffset,
+            piece.center,
+            gridSize
+          );
+          const overlap = twoVecsSame(piecePosition, cellPosition);
+          return overlap;
+        })
+        .reduce((prev, current) => prev || current);
+      return anyShapeOverlap;
+    }
+
+    return twoVecsSame(center, cellPosition);
+  });
+  if (conflictedPieceIndex === -1) {
     return null;
   }
-  return { foundIndex };
+  console.log(conflictedPieceIndex);
+  return { conflictedPieceIndex };
+};
+const checkPieceConflictsPiece = (
+  boardPieces: BoardPiece[],
+  originalPiece: BoardPiece,
+  gridSize: number
+): {
+  conflictedPieceIndex: number;
+} | null => {
+  if (originalPiece.shape) {
+    for (const offset of originalPiece.shape) {
+      const offsetCenter = positionOffsets(
+        offset,
+        originalPiece.center,
+        gridSize
+      );
+      const conflict = checkCellConflictsPiece(
+        boardPieces,
+        offsetCenter,
+        gridSize
+      );
+      console.log("TEST123-overlap", conflict);
+
+      if (conflict) {
+        return conflict;
+      }
+    }
+    return null;
+  }
+
+  return checkCellConflictsPiece(boardPieces, originalPiece.center, gridSize);
 };
 const paint = Skia.Paint();
 paint.setAntiAlias(true);
@@ -63,7 +122,33 @@ const useBoard: () => {
   const onMoveWouldConflict = () => {};
   return { onMoveWouldConflict };
 };
+const getRandomColor = (): HexStr => {
+  const channelSize = 16;
+  const charCode = new Array(6)
+    .fill(0)
+    .map(() => Math.round(Math.random() * channelSize).toString(16))
+    .reduce((prev, curr) => prev + curr);
 
+  return `#${charCode}`;
+};
+export function ControllerButton({
+  onPress,
+  backgroundColor,
+  label,
+}: {
+  onPress: () => void;
+  backgroundColor: string;
+  label: string;
+}): JSX.Element {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={{ ...styles.buttonStyle, backgroundColor }}
+    >
+      <Text>{label}</Text>
+    </Pressable>
+  );
+}
 // each location has a schema of a boardstate with pantry entries
 export const RoomMapScreen = () => {
   // for each storageLocation in room - for each (top-level) location, add a (object) with a dot which shows products in that location on tap
@@ -75,7 +160,14 @@ export const RoomMapScreen = () => {
   const [activePiece, setActivePiece] = useState<number | null>(null);
 
   const addPiece = () => {
-    dataService.addBoardPiece({ center: { x: 0, y: 0 } });
+    dataService.addBoardPiece({
+      center: { x: 0, y: 0 },
+      shape: [
+        { x: 0, y: 0 },
+        { x: 1, y: 0 },
+      ],
+      color: getRandomColor(),
+    });
 
     setActivePiece(boardPieces.length);
   };
@@ -107,12 +199,18 @@ export const RoomMapScreen = () => {
     if (!activePiece) {
       return;
     }
+    const activeObj = boardPieces[activePiece];
     const movePosition = screenCoordToBoardCoord(screenCoord, gridSize);
-    const conflicts = checkConflict(boardPieces, movePosition);
+    const potentialObject = { ...activeObj, center: movePosition };
+    const conflicts = checkPieceConflictsPiece(
+      boardPieces,
+      potentialObject,
+      gridSize
+    );
     const completeMove = () => onMove(activePiece, movePosition);
     if (conflicts) {
-      const { foundIndex } = conflicts;
-      const conflictPiece = boardPieces[foundIndex];
+      const { conflictedPieceIndex } = conflicts;
+      const conflictPiece = boardPieces[conflictedPieceIndex];
       if (conflictPiece) {
         onMoveWouldConflict({ completeMove, conflictPiece });
       }
@@ -135,7 +233,15 @@ export const RoomMapScreen = () => {
     if (activePiece) {
       if (touches) {
         if (touches.length === 1) {
-          onMoveActivePiece(firstTouch, pixPerStep);
+          const onCheckPieceLocked = (activePiece: number) => false;
+          // TODO this is supposed to be a way to limit the board positions this piece can be dragged todragAllowed
+          const onDragAllowed = () => true;
+
+          const isLocked = onCheckPieceLocked(activePiece);
+          const dragAllowed = onDragAllowed();
+          if (dragAllowed && !isLocked) {
+            onMoveActivePiece(firstTouch, pixPerStep);
+          }
         }
       }
     } else {
@@ -146,11 +252,15 @@ export const RoomMapScreen = () => {
         const onPressWithoutActive = () => {
           const movePosition = screenCoordToBoardCoord(firstTouch, pixPerStep);
 
-          const hits = checkConflict(boardPieces, movePosition);
-          console.log("TEST123-no active", hits);
+          const hits = checkCellConflictsPiece(
+            boardPieces,
+            movePosition,
+            pixPerStep
+          );
+          // console.log("TEST123-no active", hits);
           if (hits) {
-            const { foundIndex } = hits;
-            onTouchPiece(foundIndex);
+            const { conflictedPieceIndex } = hits;
+            onTouchPiece(conflictedPieceIndex);
           }
         };
         onPressWithoutActive();
@@ -163,33 +273,30 @@ export const RoomMapScreen = () => {
   return (
     // TODO xstate machine for turning touch sequences into events
     // TODO debounce events?
-    // TODO raycast
+    // TODO store layout
+    // TODO moveable/zoomable viewport
     <>
-      <View style={styles.container}>
-        <Pressable
-          onPress={() => {
-            addPiece();
-          }}
-          style={{ ...styles.buttonStyle, backgroundColor: "green" }}
-        >
-          <Text>+</Text>
-        </Pressable>
-        <Pressable
-          onPress={() => {
-            setActivePiece(null);
-          }}
-          style={{ ...styles.buttonStyle, backgroundColor: "yellow" }}
-        >
-          <Text>~</Text>
-        </Pressable>
-        <Pressable
-          onPress={() => {
-            removeActivePiece();
-          }}
-          style={{ ...styles.buttonStyle, backgroundColor: "red" }}
-        >
-          <Text>x</Text>
-        </Pressable>
+      <View>
+        <Text style={{ color: "white" }}>
+          {activePiece && `Active Object: ${activePiece}`}
+        </Text>
+      </View>
+      <View style={styles.controller}>
+        <ControllerButton
+          onPress={() => setActivePiece(null)}
+          backgroundColor={activePiece !== null ? "yellow" : "grey"}
+          label="~"
+        />
+        <ControllerButton
+          onPress={() => addPiece()}
+          backgroundColor={"green"}
+          label="+"
+        />
+        <ControllerButton
+          onPress={() => removeActivePiece()}
+          backgroundColor={"red"}
+          label="-"
+        />
       </View>
       <Canvas style={{ flex: 1 }} onTouch={touchHandler}>
         <GridBoard
@@ -207,18 +314,18 @@ export const RoomMapScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
+  controller: {
     flexDirection: "row",
 
-    alignItems: "center",
+    alignItems: "stretch",
     justifyContent: "center",
+    width: "100%",
   },
   buttonStyle: {
     margin: 10,
     padding: 5,
     borderRadius: 3,
-    width: "30%",
+    width: 160,
     alignItems: "center",
-    // width: "20px",
   },
 });

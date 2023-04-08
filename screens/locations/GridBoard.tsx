@@ -1,10 +1,29 @@
 import { Circle, Line } from "@shopify/react-native-skia";
 import React from "react";
-import { ObjVec2 } from "../../structs/types";
+import { BoardVec2, HexStr, ObjVec2, OffsetVec2 } from "../../structs/types";
 import { Grid } from "./Grid";
 //   TODO handle different piece shapes
-export type BoardPiece = { center: ObjVec2; shape?: ObjVec2[] };
+export type BoardPiece = {
+  center: BoardVec2;
+  shape?: OffsetVec2[];
+  color?: HexStr;
+};
+export const combineTwoVecs = (vecA: ObjVec2, vecB: ObjVec2) => {
+  return { x: vecA.x + vecB.x, y: vecA.y + vecB.y };
+};
+export const multiplyScalar = (vecA: ObjVec2, scalar: number) => {
+  return { x: vecA.x * scalar, y: vecA.y * scalar };
+};
+export const positionOffsets = (
+  offset: OffsetVec2,
+  center: BoardVec2,
+  gridSize: number
+): BoardVec2 => {
+  return combineTwoVecs(multiplyScalar(offset, gridSize), center) as BoardVec2;
+};
 // const activeGuard=(piece):piece is active
+const activeColor = "white";
+const defaultColor = "green";
 export function GridBoard({
   pieces,
   nLines,
@@ -46,14 +65,26 @@ export function GridBoard({
       />
       {pieces.map((piece, ii) => {
         const isActive = activePiece === ii;
-        const { x: cx, y: cy } = piece.center;
+        const piecePassiveColor = piece.color || defaultColor;
+        const elements = piece.shape
+          ? piece.shape.map((offset) =>
+              positionOffsets(offset, piece.center, gridSize)
+            )
+          : [piece.center];
         return (
-          <Circle
-            cx={cx}
-            cy={cy}
-            r={(gridSize - padding) / 2}
-            color={isActive ? "white" : "green"}
-          />
+          <>
+            {elements.map((element) => {
+              const { x: cx, y: cy } = element;
+              return (
+                <Circle
+                  cx={cx}
+                  cy={cy}
+                  r={(gridSize - padding) / 2}
+                  color={isActive ? activeColor : piecePassiveColor}
+                />
+              );
+            })}
+          </>
         );
       })}
     </>

@@ -244,12 +244,12 @@ export class DataService {
 
   public removeBoardPiece(boardPieceIndex: number) {
     this.dataStore.update(({ boardPieces }) => {
-      const mutableBoardPieces = [...boardPieces].filter(
+      const newBoardPieces = [...boardPieces].filter(
         (_, ii) => ii !== boardPieceIndex
       );
 
       return {
-        boardPieces: mutableBoardPieces,
+        boardPieces: newBoardPieces,
       };
     });
   }
@@ -261,7 +261,7 @@ export class DataService {
       const movedPiece = { ...givenPiece, center };
       const newBoardPieces = [...boardPieces];
       newBoardPieces[pieceIndex] = movedPiece;
-      console.log("TEST123", pieceIndex, newBoardPieces);
+      // console.log("TEST123", pieceIndex, newBoardPieces);
       return {
         boardPieces: newBoardPieces,
       };

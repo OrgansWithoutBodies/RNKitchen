@@ -38,6 +38,15 @@ export type HexStr = `#${string}`;
 export type RGBNumTriple = ArrVec3<RGBChannelNumber>;
 export type RGBNumStr = `${number}, ${number}, ${number}`;
 
+type BoardSpaceCoord = BrandedNumber<"BoardSpace">;
+type OffsetSpaceCoord = BrandedNumber<"OffsetSpace">;
+type ScreenSpaceCoord = BrandedNumber<"ScreenSpace">;
+
+export type BoardVec2 = ObjVec2<BoardSpaceCoord>;
+// any vec + offset vec = any vec, but offset vec is not any vec itself
+export type OffsetVec2 = ObjVec2<OffsetSpaceCoord>;
+export type ScreenVec2 = ObjVec2<ScreenSpaceCoord>;
+
 export type MealSlot = "Lunch" | "Dinner";
 export const mealColors: Record<MealSlot, HexStr> = {
   Dinner: "#FF0000",
