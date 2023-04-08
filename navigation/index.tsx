@@ -31,7 +31,8 @@ import LinkingConfiguration from "./LinkingConfiguration";
 import MealPlanner from "../screens/mealPlan/MealPlanner";
 import ShoppingList from "../screens/shoppingList/ShoppingListScreen";
 import GetRestaurantsScreen from "../screens/restaurant/RestaurantsScreen";
-import LocationScreen from "../screens/LocationScreen";
+import LocationScreen from "../screens/locations/LocationScreen";
+import { RoomMapScreen } from "../screens/locations/LocationMapScreen";
 
 // TODO stores (separate shopping list by stores, receipt structure for scanning)
 // TODO nutrition & pinewatch data?
@@ -70,9 +71,6 @@ function RootNavigator() {
         component={NotFoundScreen}
         options={{ title: "Oops!" }}
       />
-      <Stack.Group screenOptions={{ presentation: "modal" }}>
-        <Stack.Screen name="Modal" component={ModalScreen} />
-      </Stack.Group>
     </Stack.Navigator>
   );
 }
@@ -118,7 +116,6 @@ function BottomTabNavigator() {
       />
 
       <BottomTab.Screen
-        // https://github.com/wix/react-native-calendars
         name="mealPlanTab"
         component={MealPlanner}
         options={{
@@ -157,6 +154,14 @@ function BottomTabNavigator() {
         component={LocationScreen}
         options={{
           title: "Location",
+          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+        }}
+      />
+      <BottomTab.Screen
+        name="map"
+        component={RoomMapScreen}
+        options={{
+          title: "Map",
           tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
         }}
       />

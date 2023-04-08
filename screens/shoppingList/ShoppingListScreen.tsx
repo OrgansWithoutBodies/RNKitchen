@@ -5,19 +5,10 @@ import { TextInput, ToastAndroid } from "react-native";
 import { View, Text, Button } from "../../components/Themed";
 import { dataQuery } from "../../state/data.query";
 import { dataService } from "../../state/data.service";
+import { useData } from "../../state/useAkita";
 
 export default function ShoppingList() {
-  const shoppingListObservable = dataQuery["shoppingList"];
-
-  const [shoppingList, setShoppingList] = useState<(string | undefined)[]>([]);
-
-  useEffect(() => {
-    shoppingListObservable.subscribe({
-      next(observedValue) {
-        setShoppingList(observedValue);
-      },
-    });
-  }, []);
+  const [{ shoppingList }] = useData(["shoppingList"]);
   return (
     <View>
       {shoppingList.map((item, ii) => (

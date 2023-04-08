@@ -7,26 +7,11 @@ import React from "react";
 import { RecipeBuddyRecipe } from "../../structs/types";
 import { dataQuery } from "../../state/data.query";
 import { dataService } from "../../state/data.service";
+import { useData } from "../../state/useAkita";
 
 export default function GetRecipeScreen() {
-  const shoppingListObservable = dataQuery["shoppingList"];
-  const recipesObservable = dataQuery["recipes"];
+  const [{ shoppingList, recipes }] = useData(["shoppingList", "recipes"]);
 
-  const [shoppingList, setShoppingList] = useState<(string | undefined)[]>([]);
-  const [recipes, setRecipes] = useState<RecipeBuddyRecipe[] | null>(null);
-
-  useEffect(() => {
-    shoppingListObservable.subscribe({
-      next(observedValue) {
-        setShoppingList(observedValue);
-      },
-    });
-    recipesObservable.subscribe({
-      next(observedValue) {
-        setRecipes(observedValue);
-      },
-    });
-  }, []);
   const [openRecipe, setOpenRecipe] = useState<number | false>(false);
 
   return (
@@ -49,12 +34,19 @@ export default function GetRecipeScreen() {
               setExpanded={(boolVal) =>
                 boolVal ? setOpenRecipe(index) : setOpenRecipe(false)
               }
-              shoppingList={shoppingList}
+              recipes={shoppingList}
               addToShoppingList={(item) => dataService.addToShoppingList(item)}
             />
           )}
         />
       )}
+      <Button
+        title="Add New Recipe"
+        onPress={async () => {
+          // TODO
+          // await dataService.getRecipesFromRecipeBuddy();
+        }}
+      />
     </View>
   );
 }

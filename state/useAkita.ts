@@ -3,6 +3,8 @@ import { Observable, ObservedValueOf } from "rxjs";
 import { pick } from "rambdax";
 
 import { useEffect, useState } from "react";
+import { dataQuery } from "./data.query";
+import { dataService } from "./data.service";
 type StateShapeDefault = {};
 type SubscribedQueryKeys<TQuery extends Query<StateShapeDefault>> =
   (keyof TQuery)[];
@@ -46,3 +48,6 @@ export function useAkita<
 
   return [retrievedQueryTerms, []];
 }
+// TODO token registration
+export const useData = (queryTerms: SubscribedQueryKeys<typeof dataQuery>) =>
+  useAkita(dataQuery, dataService, queryTerms);

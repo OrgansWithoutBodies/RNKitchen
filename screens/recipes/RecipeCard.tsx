@@ -1,13 +1,10 @@
-import React, { useEffect, useState } from "react";
-import { StyleSheet, TouchableOpacity, Image } from "react-native";
+import React from "react";
+import { useData } from "../../state/useAkita";
+
+import { StyleSheet, TouchableOpacity } from "react-native";
 import { View, Text, Button } from "../../components/Themed";
-import { dataQuery, DataQuery } from "../../state/data.query";
 import { dataService } from "../../state/data.service";
-import {
-  NaiveExistingProductDetails,
-  RecipeBuddyRecipe,
-  Units,
-} from "../../structs/types";
+import { RecipeBuddyRecipe, Units } from "../../structs/types";
 
 const degrees = [
   "thin",
@@ -101,18 +98,8 @@ export default function RecipeCard({
   shoppingList: string[];
   addToShoppingList: (item: string) => void;
 }) {
-  const [existingProducts, setExistingProducts] = useState<
-    Record<string, NaiveExistingProductDetails>
-  >({});
-  const existingProductsObservable = dataQuery["existingProducts"];
+  const [{ existingProducts }] = useData(["existingProducts"]);
 
-  useEffect(() => {
-    existingProductsObservable.subscribe({
-      next(observedValue) {
-        setExistingProducts(observedValue);
-      },
-    });
-  }, []);
   return (
     <View style={styles.item}>
       <TouchableOpacity
@@ -123,7 +110,7 @@ export default function RecipeCard({
         <Text style={styles.title}>{recipe.name}</Text>
         <TouchableOpacity
           activeOpacity={0.95}
-          style={styles.addToMealPlanButton}
+          style={styles.expandRecipeButton}
         >
           <Text style={styles.text}>+</Text>
         </TouchableOpacity>
@@ -133,6 +120,14 @@ export default function RecipeCard({
       <View>
         {expanded && (
           <View>
+            <Button
+              title="Add Meal To Plan"
+              onPress={() => {
+                // TODO modal to choose meal slot & date
+                // first suggestions are 'today', 'tomorrow', 'this week'?
+                dataService.addRecipeToPlan("2023-04-19", recipe._id, "Dinner");
+              }}
+            />
             <View>
               {recipe.ingredients.map((ingredient) => {
                 const ingredientName = parseIngredientUsage(ingredient);
@@ -283,7 +278,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  addToMealPlanButton: {
+  expandRecipeButton: {
     flexDirection: "row",
     height: "100%",
     width: "20%",

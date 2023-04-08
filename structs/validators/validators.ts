@@ -1,21 +1,12 @@
 import * as ss from "superstruct";
-import { RecipeBuddyRecipe } from "./types";
+import { RecipeBuddyRecipe } from "../types";
 import isUrl from "is-url";
 
 const URLStruct = ss.define<string>("URL", (value: any) => {
   return isUrl(value) && value.length < 2048;
 });
-
-// const EmailStruct = define('Email', (value) => {
-//   if (!isEmail(value)) {
-//     return { code: 'not_email' }
-//   } else if (value.length >= 256) {
-//     return { code: 'too_long' }
-//   } else {
-//     return true
-//   }
-// })
-
+// TODO add validators for minimum set of fields expected for grocy
+// const HasIDValidator
 const SingleRecipeBuddyRecipeValidator: ss.Describe<
   RecipeBuddyRecipe & { __v: number }
 > = ss.object({

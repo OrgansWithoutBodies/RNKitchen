@@ -4,35 +4,19 @@ import axios from "axios";
 import { Button, Text, View } from "../components/Themed";
 import { Axios as AxiosAsync } from "axios-observable";
 import React from "react";
-import { SocketStarter, useWebSocket } from "../hooks/useWebSocket";
+import { SocketStarter, useWebSocketStarter } from "../hooks/useWebSocket";
 import { dataQuery } from "../state/data.query";
+import { useData } from "../state/useAkita";
+import { dataService } from "../state/data.service";
 
 // TODO lookup non-loc barcodes in that openfood thingamajig
 export default function BarcodeScreen() {
-  const barcodes = { "12345": "test", "23456": "test123" };
-  const [barcode, setBarcode] = useState<string | null>("1245");
-
+  // Start subscription to websocket
   const barcodeWebsocketObservable = dataQuery["barcodeWebSocket"];
-  const scannedLocationCodeObservable = dataQuery["scannedLocationCode"];
+  useWebSocketStarter(barcodeWebsocketObservable);
 
-  useEffect(() => {
-    let nn = 0;
-    barcodeWebsocketObservable.next(SocketStarter);
-    scannedLocationCodeObservable.subscribe({
-      next(observedValue) {
-        if (nn === 0) {
-          ToastAndroid.show("Barcode Server Connected", ToastAndroid.CENTER);
-          nn = nn + 1;
-        }
-
-        setBarcode(observedValue);
-      },
-      error(errorVal) {
-        ToastAndroid.show("Barcode Server Not Available!", ToastAndroid.CENTER);
-      },
-    });
-    return () => barcodeWebsocketObservable.complete();
-  }, []);
+  const barcodes = { "12345": "test", "23456": "test123" };
+  const [{ scannedLocationCode: barcode }] = useData(["scannedLocationCode"]);
   const [isRelocating, setIsRelocating] = useState<boolean>(false);
   const [relocateCode, setRelocateCode] = useState<string | null>(null);
   const [newBarcodeInfo, setNewBarcodeInfo] = useState<string | null>(null);

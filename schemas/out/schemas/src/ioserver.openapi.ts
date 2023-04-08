@@ -5,26 +5,18 @@
 
 
 export interface paths {
-  "/barcode/": {
-    /** @description API endpoint that allows users to be viewed or edited. */
-    get: operations["barcode_list"];
-    /** @description API endpoint that allows users to be viewed or edited. */
-    post: operations["barcode_create"];
-  };
-  "/barcode/{id}/": {
-    /** @description API endpoint that allows users to be viewed or edited. */
-    get: operations["barcode_retrieve"];
-    /** @description API endpoint that allows users to be viewed or edited. */
-    put: operations["barcode_update"];
-    /** @description API endpoint that allows users to be viewed or edited. */
-    delete: operations["barcode_destroy"];
-    /** @description API endpoint that allows users to be viewed or edited. */
-    patch: operations["barcode_partial_update"];
-  };
   "/printBarcode": {
+    /**
+     * Send a list of products to sticker printer 
+     * @description Request Print Barcode List
+     */
     post: operations["printBarcode_create"];
   };
   "/printShoppingList": {
+    /**
+     * Send a list of products to receipt printer 
+     * @description Request Print Shopping List
+     */
     post: operations["printShoppingList_create"];
   };
   "/schema/": {
@@ -42,26 +34,14 @@ export type webhooks = Record<string, never>;
 
 export interface components {
   schemas: {
-    Barcode: {
-      code: string;
+    BarcodePrintRequest: {
+      data: components["schemas"]["ShoppingList"];
     };
-    PaginatedBarcodeList: {
-      /** @example 123 */
-      count?: number;
-      /**
-       * Format: uri 
-       * @example http://api.example.org/accounts/?page=4
-       */
-      next?: string | null;
-      /**
-       * Format: uri 
-       * @example http://api.example.org/accounts/?page=2
-       */
-      previous?: string | null;
-      results?: (components["schemas"]["Barcode"])[];
+    ShoppingList: {
+      list: (string)[];
     };
-    PatchedBarcode: {
-      code?: string;
+    ShoppingListRequest: {
+      data: components["schemas"]["ShoppingList"];
     };
   };
   responses: never;
@@ -75,124 +55,54 @@ export type external = Record<string, never>;
 
 export interface operations {
 
-  barcode_list: {
-    /** @description API endpoint that allows users to be viewed or edited. */
-    parameters?: {
-        /** @description A page number within the paginated result set. */
-      query?: {
-        page?: number;
-      };
-    };
-    responses: {
-      200: {
-        content: {
-          "application/json": components["schemas"]["PaginatedBarcodeList"];
-        };
-      };
-    };
-  };
-  barcode_create: {
-    /** @description API endpoint that allows users to be viewed or edited. */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["Barcode"];
-        "application/x-www-form-urlencoded": components["schemas"]["Barcode"];
-        "multipart/form-data": components["schemas"]["Barcode"];
-      };
-    };
-    responses: {
-      201: {
-        content: {
-          "application/json": components["schemas"]["Barcode"];
-        };
-      };
-    };
-  };
-  barcode_retrieve: {
-    /** @description API endpoint that allows users to be viewed or edited. */
-    parameters: {
-        /** @description A unique integer value identifying this barcode. */
-      path: {
-        id: number;
-      };
-    };
-    responses: {
-      200: {
-        content: {
-          "application/json": components["schemas"]["Barcode"];
-        };
-      };
-    };
-  };
-  barcode_update: {
-    /** @description API endpoint that allows users to be viewed or edited. */
-    parameters: {
-        /** @description A unique integer value identifying this barcode. */
-      path: {
-        id: number;
-      };
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["Barcode"];
-        "application/x-www-form-urlencoded": components["schemas"]["Barcode"];
-        "multipart/form-data": components["schemas"]["Barcode"];
-      };
-    };
-    responses: {
-      200: {
-        content: {
-          "application/json": components["schemas"]["Barcode"];
-        };
-      };
-    };
-  };
-  barcode_destroy: {
-    /** @description API endpoint that allows users to be viewed or edited. */
-    parameters: {
-        /** @description A unique integer value identifying this barcode. */
-      path: {
-        id: number;
-      };
-    };
-    responses: {
-      /** @description No response body */
-      204: never;
-    };
-  };
-  barcode_partial_update: {
-    /** @description API endpoint that allows users to be viewed or edited. */
-    parameters: {
-        /** @description A unique integer value identifying this barcode. */
-      path: {
-        id: number;
-      };
-    };
-    requestBody?: {
-      content: {
-        "application/json": components["schemas"]["PatchedBarcode"];
-        "application/x-www-form-urlencoded": components["schemas"]["PatchedBarcode"];
-        "multipart/form-data": components["schemas"]["PatchedBarcode"];
-      };
-    };
-    responses: {
-      200: {
-        content: {
-          "application/json": components["schemas"]["Barcode"];
-        };
-      };
-    };
-  };
   printBarcode_create: {
+    /**
+     * Send a list of products to sticker printer 
+     * @description Request Print Barcode List
+     */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["BarcodePrintRequest"];
+        "application/x-www-form-urlencoded": components["schemas"]["BarcodePrintRequest"];
+        "multipart/form-data": components["schemas"]["BarcodePrintRequest"];
+      };
+    };
     responses: {
-      /** @description No response body */
-      200: never;
+      200: {
+        content: {
+          "application/json": boolean;
+        };
+      };
+      400: {
+        content: {
+          "application/json": number;
+        };
+      };
     };
   };
   printShoppingList_create: {
+    /**
+     * Send a list of products to receipt printer 
+     * @description Request Print Shopping List
+     */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ShoppingListRequest"];
+        "application/x-www-form-urlencoded": components["schemas"]["ShoppingListRequest"];
+        "multipart/form-data": components["schemas"]["ShoppingListRequest"];
+      };
+    };
     responses: {
-      /** @description No response body */
-      200: never;
+      200: {
+        content: {
+          "application/json": boolean;
+        };
+      };
+      400: {
+        content: {
+          "application/json": number;
+        };
+      };
     };
   };
   schema_retrieve: {

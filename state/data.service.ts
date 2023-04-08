@@ -3,8 +3,11 @@ import { ToastAndroid } from "react-native";
 import {
   dataStore,
   DataStore,
+  DateString,
   HTTPUrl,
   LocationId,
+  MealPlan,
+  ProductId,
   StorageLocation,
 } from "./data.store";
 import {
@@ -12,12 +15,19 @@ import {
   GrocyProduct,
   GrocyStockPaths,
   IOServerPaths,
-  IOServerPrintBarcodeDataStructure,
   RecipeBuddyAPIPaths,
   RecipeBuddyRecipe,
+  IOServerPrintBarcodeRequestStructure,
+  IOServerPrintShoppingListRequestStructure,
+  OpenApiPostRequest,
+  Meal,
+  RecipeID,
+  MealSlot,
+  mealColors,
 } from "../structs/types";
 import * as ss from "superstruct";
-import { ArrayRecipeBuddyRecipeValidator } from "../structs/validators";
+import { ArrayRecipeBuddyRecipeValidator } from "../structs/validators/validators";
+import { BoardPiece } from "../screens/locations/GridBoard";
 export class DataService {
   constructor(private dataStore: DataStore) {}
 
@@ -32,6 +42,17 @@ export class DataService {
           ...store.existingProducts,
           [itemName]: itemDetails,
         },
+      };
+    });
+  }
+  public addStock(product: ProductId, location: LocationId, amount: number) {
+    this.dataStore.update((store) => {
+      return {
+        ...store,
+        stockEntries: [
+          ...store.stockEntries,
+          { product_id: product, location_id: location, amount },
+        ],
       };
     });
   }
@@ -162,7 +183,16 @@ export class DataService {
   }
   //  IOServer
   //   TODO be able to handle interchangeable backends
-  public async sendData<TPath, TData>(
+  // TODO be able to specify based on OperationType
+  public static async postOpenApiData<
+    TOperation extends OpenApiPostRequest,
+    // TODO TPath should contain TOperation within it
+    TPath extends string
+  >(rootUrl: HTTPUrl, path: TPath, data: TOperation["requestBody"]) {
+    axios.post(rootUrl + path, data);
+  }
+
+  public async postData<TPath, TData>(
     rootUrl: HTTPUrl,
     path: TPath,
     data: TData
@@ -176,23 +206,89 @@ export class DataService {
     const { shoppingList, ioServerUrl } = this.dataStore.getValue();
     const relativePath: IOServerPaths = "/printShoppingList";
     // TODO openapi typing for data
-    const data: IOServerPrintBarcodeDataStructure = {
+    const data = {
       list: shoppingList.filter((val) => val !== undefined) as string[],
     };
 
-    this.sendData(ioServerUrl, relativePath, data);
+    this.postData<
+      IOServerPaths,
+      IOServerPrintShoppingListRequestStructure["data"]
+    >(ioServerUrl, relativePath, data);
   }
   public sendBarcodeToStickerPrinter(barcodes: string[]) {
     const { ioServerUrl } = this.dataStore.getValue();
 
     const relativePath: IOServerPaths = "/printBarcode";
-    this.sendData(ioServerUrl, relativePath, barcodes);
+    this.postData<IOServerPaths, IOServerPrintBarcodeRequestStructure["data"]>(
+      ioServerUrl,
+      relativePath,
+      { barcodes }
+    );
   }
 
   // GROCY
   public getProductsFromGrocy() {
     const relativePath: GrocyStockPaths = "/stock";
     const products: GrocyProduct[] = [];
+  }
+
+  public setPlannedMeals(mealPlan: MealPlan) {
+    this.dataStore.update({ mealPlan });
+  }
+
+  public addBoardPiece(boardPiece: BoardPiece) {
+    this.dataStore.update(({ boardPieces }) => ({
+      boardPieces: [...boardPieces, boardPiece],
+    }));
+  }
+
+  public removeBoardPiece(boardPieceIndex: number) {
+    this.dataStore.update(({ boardPieces }) => {
+      const mutableBoardPieces = [...boardPieces].filter(
+        (_, ii) => ii !== boardPieceIndex
+      );
+
+      return {
+        boardPieces: mutableBoardPieces,
+      };
+    });
+  }
+
+  // TODO maybe make boardpiece center the cell index?
+  public moveBoardPiece(pieceIndex: number, center: BoardPiece["center"]) {
+    this.dataStore.update(({ boardPieces }) => {
+      const givenPiece = boardPieces[pieceIndex];
+      const movedPiece = { ...givenPiece, center };
+      const newBoardPieces = [...boardPieces];
+      newBoardPieces[pieceIndex] = movedPiece;
+      console.log("TEST123", pieceIndex, newBoardPieces);
+      return {
+        boardPieces: newBoardPieces,
+      };
+    });
+  }
+
+  public static convertRecipeToMeal(recipe: RecipeBuddyRecipe) {}
+
+  // TODO what do if mealslot is already taken
+  public addRecipeToPlan(
+    date: DateString,
+    recipeID: RecipeID,
+    mealSlot: MealSlot
+  ) {
+    const { mealPlan: mealPlanImmutable } = this.dataStore.getValue();
+    const mealPlan = { ...mealPlanImmutable };
+    const meal: Meal = {
+      color: mealColors[mealSlot],
+      slot: mealSlot,
+      recipeID,
+    };
+    if (Object.keys(mealPlan).includes(date)) {
+      mealPlan[date].dots.push(meal);
+    } else {
+      mealPlan[date] = { dots: [meal] };
+    }
+    this.dataStore.update({ mealPlan });
   }
 }
 export const dataService = new DataService(dataStore);

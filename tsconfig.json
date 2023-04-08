@@ -3,6 +3,7 @@
   "compilerOptions": {
     "experimentalDecorators": true,
     "jsx": "react",
-    "strict": true
-  }
+    "strict": true,
+  },
+  "include":["./@types"]
 }

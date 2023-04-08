@@ -1,20 +1,25 @@
-export const SocketStarter = {
+import { useEffect } from "react";
+import { WebSocketSubject } from "rxjs/webSocket";
+export type WebSocketMessage = {
+  action: string;
+  id: number;
+  instance?: { code: string };
+  model: string;
+  type: string;
+  lookup_by?: number;
+};
+export const SocketStarter: WebSocketMessage = {
   type: "subscribe",
   id: 1,
   model: "BarcodeServer.Barcode",
   action: "retrieve",
   lookup_by: 1,
-} as const;
+};
 
-export function useWebSocket(onMessage, onClose, onError): WebSocket {
-  var socket = new WebSocket(
-    "ws://" + "192.168.88.242:8000" + "/ws/subscribe/"
-  );
-  socket.onmessage = (val) => onMessage(val);
-  socket.onclose = (val) => onClose(val);
-  socket.onerror = (val) => onError(val);
-  socket.onopen = () => {
-    socket.send(JSON.stringify(SocketStarter));
-  };
-  return socket;
+export function useWebSocketStarter(observable: WebSocketSubject<any>): void {
+  useEffect(() => {
+    observable.next(SocketStarter);
+
+    return () => observable.complete();
+  }, []);
 }

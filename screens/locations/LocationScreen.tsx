@@ -1,32 +1,35 @@
 import { useEffect, useState } from "react";
 import { StyleSheet } from "react-native";
 
-import { Text, View } from "../components/Themed";
+import { Button, Text, View } from "../../components/Themed";
 import React from "react";
-import { dataQuery } from "../state/data.query";
+import { dataQuery } from "../../state/data.query";
 import {
   LocationId,
   ProductsInLocation,
   StorageLocation,
-} from "../state/data.store";
-import { GrocyProduct } from "../structs/types";
-import { useAkita } from "../state/useAkita";
-import { dataService } from "../state/data.service";
+} from "../../state/data.store";
+import { GrocyProduct } from "../../structs/types";
+import { useData } from "../../state/useAkita";
+import { dataService } from "../../state/data.service";
 
 export default function LocationScreen() {
   const [{ productsInLocations: locationProducts, locations, products }] =
-    useAkita(dataQuery, dataService, [
-      "productsInLocations",
-      "locations",
-      "products",
-    ]);
-  console.log("TEST123", locations);
+    useData(["productsInLocations", "locations", "products"]);
+
   return (
     <View>
       {locations.map((location) => {
         return (
           <View>
             <Text style={{ fontSize: 20 }}>{location.name}</Text>
+            <Button
+              title="+"
+              onPress={() => {
+                // TODO raise window that scrolls through available products, then asks for input
+                dataService.addStock(0, location.id, 4);
+              }}
+            />
             <View>
               {locationProducts &&
                 locationProducts[location.id! as LocationId] &&
@@ -34,7 +37,7 @@ export default function LocationScreen() {
                   (locationProduct) => {
                     return (
                       <Text style={{ fontSize: 10 }}>
-                        {products[locationProduct.productId].name}x{" "}
+                        {products[locationProduct.productId].name}x
                         {locationProduct.countAtLocation}
                       </Text>
                     );

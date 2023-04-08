@@ -14,24 +14,27 @@ import {
   ProductsInLocation,
   StorageLocation,
 } from "./data.store";
-import { SocketStarter } from "../hooks/useWebSocket";
+import { SocketStarter, WebSocketMessage } from "../hooks/useWebSocket";
 // TODO start splitting this up
+
+const CodePrefix = {
+  Location: LocCodePrefix,
+  LocationContainer: LocContainerCodePrefix,
+} as const;
+
 export class DataQuery extends Query<DataState> {
   public shoppingList = this.select("shoppingList");
+  public boardPieces = this.select("boardPieces");
+
   public existingProducts = this.select("existingProducts");
   public recipes = this.select("recipes");
   public locations = this.select("locations");
   public stockEntries = this.select("stockEntries");
   public products = this.select("products");
+  public mealPlan = this.select("mealPlan");
 
-  public barcodeWebSocket = webSocket<{
-    action: string;
-    id: number;
-    instance?: { code: string };
-    model: string;
-    type: string;
-  }>({
-    // TODO derive this from this.select('ioServerUrl')
+  public barcodeWebSocket = webSocket<WebSocketMessage>({
+    // TODO derive this from this.select('ioServerUrl') - will need to close & reopen if this ever changes
     url: "ws://" + "192.168.88.242:8000" + "/ws/subscribe/",
     WebSocketCtor: WebSocket,
   });
@@ -75,7 +78,7 @@ export class DataQuery extends Query<DataState> {
     this.stockEntries,
     this.products,
   ]).pipe(
-    // TODO this is just a join,
+    // TODO this is just a join, sure theres a better pattern
     map(([locations, stockEntries, products]) => {
       const entriesMap: ProductsInLocation = {};
       stockEntries.forEach((entry) => {

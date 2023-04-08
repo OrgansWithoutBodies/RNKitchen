@@ -45,18 +45,6 @@ export default function RestaurantCard({
   expanded: boolean;
   setExpanded: (expand: boolean) => void;
 }) {
-  // const [existingProducts, setExistingProducts] = useState<
-  //   Record<string, ExistingProductDetails>
-  // >({});
-  // const existingProductsObservable = dataQuery["existingProducts"];
-
-  // useEffect(() => {
-  //   existingProductsObservable.subscribe({
-  //     next(observedValue) {
-  //       setExistingProducts(observedValue);
-  //     },
-  //   });
-  // }, []);
   return (
     <View style={styles.item}>
       <TouchableOpacity

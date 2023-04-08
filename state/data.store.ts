@@ -1,4 +1,5 @@
 import { Store, StoreConfig } from "@datorama/akita";
+import { BoardPiece } from "../screens/locations/GridBoard";
 import {
   NaiveExistingProductDetails,
   GrocyLocation,
@@ -6,15 +7,25 @@ import {
   GrocyStockEntry,
   RecipeBuddyRecipe,
   GrocyProduct,
+  MealSet,
+  BrandedString,
+  BrandedNumber,
 } from "../structs/types";
-export type BrandedType<T = any, Brand extends string = string> = T & {
-  __brand: Brand;
-};
-export type BrandedNumber<Brand extends string> = BrandedType<number, Brand>;
-export type BrandedString<Brand extends string> = BrandedType<string, Brand>;
 
+// TODO more specific
+export type DateString = BrandedString<"Date">;
+export type MealPlan = Record<DateString, MealSet>;
 // TODO assign these
 export type LocationId = BrandedNumber<"Location Id">;
+export type PersonId = BrandedNumber<"Person Id">;
+export type HolidayId = BrandedString<"Holiday">;
+type Holiday = {
+  id: HolidayId;
+  name: string;
+  dates: DateString[];
+  description: string;
+};
+export type Person = { id: PersonId; name: string };
 export type ProductId = BrandedNumber<"Product Id">;
 export type EntryId = BrandedNumber<"Entry Id">;
 export type ProductsInLocation = Record<
@@ -26,6 +37,8 @@ export type HTTPUrl = `http://${string}` | `https://${string}`;
 // cons - would have to persist location data here
 export type StorageLocation = GrocyLocation & { parentLocationId?: LocationId };
 export interface DataState {
+  family: Person[];
+  boardPieces: BoardPiece[];
   token: string | null;
   name: string | null;
   ioServerUrl: HTTPUrl;
@@ -37,13 +50,14 @@ export interface DataState {
   tandoorUrl?: HTTPUrl;
   recipes: RecipeBuddyRecipe[];
   shoppingList: (string | undefined)[];
+  mealPlan: MealPlan;
   // TODO change this type
   existingProducts: Record<string, NaiveExistingProductDetails>;
   products: GrocyProduct[];
   locations: StorageLocation[];
   quantityUnits: GrocyQuantityUnit[];
 }
-
+// TODO move these to barcodes
 export const LocCodePrefix = "LOC!" as const;
 export const LocContainerCodePrefix = "LCON!" as const;
 type LocContainers = [
@@ -77,8 +91,10 @@ const LocationCodes: Record<LocContainerCode<any, any>, LocCode<any, any>[]> = {
 };
 
 // TODO parenthetical specification - ie "1 (16 ounce) package"
+// TODO hijack tandoor's ingredient parser
 export function createInitialState(): DataState {
   return {
+    boardPieces: [],
     token: null,
     name: null,
     existingProducts: {},
@@ -104,6 +120,12 @@ export function createInitialState(): DataState {
     quantityUnits: [],
     ioServerUrl: "http://192.168.88.242:8000",
     recipeBuddyUrl: "http://192.168.88.242:4000",
+    mealPlan: {},
+    family: [
+      { id: "0", name: "test user" },
+      { id: "1", name: "test mom" },
+      { id: "2", name: "test dad" },
+    ],
   };
 }
 
