@@ -290,5 +290,19 @@ export class DataService {
     }
     this.dataStore.update({ mealPlan });
   }
+  /**
+   * addLabelToPiece
+   */
+  public addLabelToPiece(pieceIndex: number, label: string) {
+    this.dataStore.update(({ boardPieces }) => {
+      const givenPiece = boardPieces[pieceIndex];
+      const labeledPiece = { ...givenPiece, label };
+      const newBoardPieces = [...boardPieces];
+      newBoardPieces[pieceIndex] = labeledPiece;
+      return {
+        boardPieces: newBoardPieces,
+      };
+    });
+  }
 }
 export const dataService = new DataService(dataStore);

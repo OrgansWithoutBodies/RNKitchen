@@ -135,15 +135,21 @@ export function ControllerButton({
   onPress,
   backgroundColor,
   label,
+  disabled = false,
 }: {
   onPress: () => void;
   backgroundColor: string;
   label: string;
+  disabled?: boolean;
 }): JSX.Element {
   return (
     <Pressable
+      disabled={disabled}
       onPress={onPress}
-      style={{ ...styles.buttonStyle, backgroundColor }}
+      style={{
+        ...styles.buttonStyle,
+        backgroundColor: disabled ? "grey" : backgroundColor,
+      }}
     >
       <Text>{label}</Text>
     </Pressable>
@@ -267,9 +273,15 @@ export const RoomMapScreen = () => {
       }
     }
   };
-  const rect: SkRect = { height, width, x: 0, y: 0 };
-  // TODO ? https://www.npmjs.com/package/react-native-draggable
+  const activeGuard = (activePiece: number | null): activePiece is number => {
+    return activePiece !== null;
+  };
+  const isActive = activeGuard(activePiece);
+  const activeObj = isActive ? boardPieces[activePiece] : null;
 
+  const rect: SkRect = { height, width, x: 0, y: 0 };
+  const label = isActive ? boardPieces[activePiece].label : null;
+  const labelBlurb = isActive && label ? `| ${label}` : "";
   return (
     // TODO xstate machine for turning touch sequences into events
     // TODO debounce events?
@@ -278,14 +290,22 @@ export const RoomMapScreen = () => {
     <>
       <View>
         <Text style={{ color: "white" }}>
-          {activePiece && `Active Object: ${activePiece}`}
+          {activePiece && `Active Object: ${activePiece} ${labelBlurb}`}
         </Text>
       </View>
       <View style={styles.controller}>
         <ControllerButton
+          disabled={activePiece === null}
           onPress={() => setActivePiece(null)}
-          backgroundColor={activePiece !== null ? "yellow" : "grey"}
+          backgroundColor={"yellow"}
           label="~"
+        />
+        <ControllerButton
+          disabled={activePiece === null}
+          // todo typeguard for this active piece
+          onPress={() => dataService.addLabelToPiece(activePiece!, "TEST")}
+          backgroundColor={"blue"}
+          label="?"
         />
         <ControllerButton
           onPress={() => addPiece()}

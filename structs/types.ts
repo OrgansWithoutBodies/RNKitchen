@@ -6,6 +6,7 @@ import {
   components as IOServerAPIComponents,
   paths as IOServerAPIPaths,
 } from "../schemas/out/schemas/src/ioserver.openapi";
+import { ProductId } from "../state/data.store";
 import { HttpStatusCode } from "./responseCodes";
 // import type { Recipe, FoodRecipe } from "../schemas/out/tandoor.api";
 export type BrandedType<T = any, Brand extends string = string> = T & {
@@ -20,7 +21,8 @@ export interface RecipeBuddyRecipe {
   url: string;
   name: string;
   imageUrl: string;
-  ingredients: string[];
+  // TODO how to handle ingredients without an associated product?
+  ingredients: ProductId[];
   steps: string[];
 }
 export type ShoppingListIncomplete = (string | undefined)[];
@@ -118,6 +120,7 @@ export type GrocyTask = GrocyAPIComponentSchemas["Task"];
 export type GrocyStockEntry = GrocyAPIComponentSchemas["StockEntry"];
 export type GrocyShoppingListItem =
   GrocyAPIComponentSchemas["ShoppingListItem"];
+
 export type GrocyStockJournal = GrocyAPIComponentSchemas["StockJournal"];
 export type GrocyStockJournalSummary =
   GrocyAPIComponentSchemas["StockJournalSummary"];

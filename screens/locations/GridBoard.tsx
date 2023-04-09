@@ -7,6 +7,7 @@ export type BoardPiece = {
   center: BoardVec2;
   shape?: OffsetVec2[];
   color?: HexStr;
+  label?: string;
 };
 export const combineTwoVecs = (vecA: ObjVec2, vecB: ObjVec2) => {
   return { x: vecA.x + vecB.x, y: vecA.y + vecB.y };

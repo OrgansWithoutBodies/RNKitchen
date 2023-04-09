@@ -30,6 +30,7 @@ import {
 import LinkingConfiguration from "./LinkingConfiguration";
 import MealPlanner from "../screens/mealPlan/MealPlanner";
 import ShoppingList from "../screens/shoppingList/ShoppingListScreen";
+import EntriesComponent from "../screens/shoppingList/EntriesComponent";
 import GetRestaurantsScreen from "../screens/restaurant/RestaurantsScreen";
 import LocationScreen from "../screens/locations/LocationScreen";
 import { RoomMapScreen } from "../screens/locations/LocationMapScreen";
@@ -146,6 +147,14 @@ function BottomTabNavigator() {
         component={ShoppingList}
         options={{
           title: "ShoppingList",
+          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+        }}
+      />
+      <BottomTab.Screen
+        name="entriesTab"
+        component={EntriesComponent}
+        options={{
+          title: "EntriesComponent",
           tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
         }}
       />
