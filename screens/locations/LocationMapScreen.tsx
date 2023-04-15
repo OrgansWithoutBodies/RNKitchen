@@ -1,10 +1,4 @@
-import {
-  Skia,
-  BlendMode,
-  SkRect,
-  Canvas,
-  Circle,
-} from "@shopify/react-native-skia";
+import { Skia, BlendMode, Canvas, Circle } from "@shopify/react-native-skia";
 import React, { useState } from "react";
 import { Dimensions, Pressable, StyleSheet, View, Text } from "react-native";
 
@@ -12,7 +6,7 @@ import { buildTouchHandler } from "./useBoard";
 
 import { dataService } from "../../state/data.service";
 import { useData } from "../../state/useAkita";
-import { HexStr } from "../../structs/types";
+import { GrocyProduct, HexStr } from "../../structs/types";
 
 import {
   GridBoard,
@@ -22,6 +16,11 @@ import {
   TileTemplateProps,
 } from "./GridBoard";
 import { ActiveItem, MoveWouldConflictHandler } from "./types";
+import {
+  LocationId,
+  ProductList,
+  StorageLocation,
+} from "../../state/data.store";
 
 const paint = Skia.Paint();
 paint.setAntiAlias(true);
@@ -136,6 +135,42 @@ function ActiveDetails({
     </View>
   );
 }
+
+function ActiveLocation({
+  activePiece,
+
+  location,
+  placedProducts,
+  products,
+}: {
+  location: StorageLocation;
+  placedProducts: ProductList | null;
+  products: GrocyProduct[];
+} & ActiveItem &
+  GridBoardPieceProps): JSX.Element {
+  const activeGuard = (activePiece: number | null): activePiece is number => {
+    return activePiece !== null;
+  };
+  const isActive = activeGuard(activePiece);
+
+  return (
+    <View>
+      <>
+        <Text style={{ color: "white" }}>{location.name}</Text>
+        <Text style={{ color: "white" }}>{location.description}</Text>
+        {placedProducts &&
+          placedProducts.map((product) => {
+            return (
+              <Text style={{ color: "white" }}>
+                {products[product.productId].name}
+              </Text>
+            );
+          })}
+      </>
+    </View>
+  );
+}
+
 type ControllerButtonType = {
   onPress: () => void;
   backgroundColor: string;
@@ -150,22 +185,9 @@ export function Controller({
 }: GridBoardPieceProps & ActiveItem & { buttons: ControllerButtonType[] }) {
   return (
     <View>
-      <ActiveDetails
-        activePiece={activePiece}
-        setActivePiece={setActivePiece}
-        boardPieces={boardPieces}
-      />
       <View style={styles.controller}>
         {buttons.map((button) => {
-          return (
-            <ControllerButton
-              {...button}
-              // disabled={activePiece === null}
-              // onPress={() => deselectActive()}
-              // backgroundColor={"yellow"}
-              // label="~"
-            />
-          );
+          return <ControllerButton {...button} />;
         })}
       </View>
     </View>
@@ -173,11 +195,9 @@ export function Controller({
 }
 // each location has a schema of a boardstate with pantry entries
 // export const DemoDraggableScreen = () => {
-export const RoomMapScreen = () => {
+export const TestingMapScreen = () => {
   // for each storageLocation in room - for each (top-level) location, add a (object) with a dot which shows products in that location on tap
-  const [
-    { boardPieces, productsInLocations: locationProducts, locations, products },
-  ] = useData(["productsInLocations", "locations", "products", "boardPieces"]);
+  const [{ boardPieces }] = useData(["boardPieces"]);
   const pixPerStep = 50;
 
   const [activePiece, setActivePiece] =
@@ -240,6 +260,70 @@ export const RoomMapScreen = () => {
       <WholeScreenMap
         activePiece={activePiece}
         setActivePiece={setActivePiece}
+        boardPieces={boardPieces}
+        gridSize={pixPerStep}
+      />
+    </>
+  );
+};
+export const RoomMapScreen = () => {
+  // for each storageLocation in room - for each (top-level) location, add a (object) with a dot which shows products in that location on tap
+  const [{ locations, productsInLocations, products }] = useData([
+    "locations",
+    "productsInLocations",
+    "products",
+  ]);
+  const pixPerStep = 50;
+
+  const [activeId, setActiveId] = useState<LocationId | null>(null);
+  const setActiveHandler = (activePiece: ActiveItem["activePiece"]) => {
+    return setActiveId(locations[activePiece!].id);
+  };
+
+  const removeActivePiece = () => {
+    if (activeId) {
+      dataService.removeLocation(activeId);
+    }
+    setActiveId(null);
+  };
+  const deselectActive = () => setActiveId(null);
+  const boardPieces = locations.map(({ piece }) => piece);
+  return (
+    // TODO why does making this into a view break the canvas
+    <>
+      {activeId !== null ? (
+        <ActiveLocation
+          activePiece={activeId}
+          setActivePiece={setActiveHandler}
+          boardPieces={boardPieces}
+          location={locations[activeId]}
+          products={products}
+          placedProducts={productsInLocations[activeId] || null}
+        />
+      ) : (
+        <></>
+      )}
+      <Controller
+        activePiece={activeId}
+        setActivePiece={setActiveId}
+        boardPieces={boardPieces}
+        buttons={[
+          {
+            disabled: activeId === null,
+            onPress: () => deselectActive(),
+            backgroundColor: "yellow",
+            label: "~",
+          },
+          {
+            onPress: () => removeActivePiece(),
+            backgroundColor: "red",
+            label: "-",
+          },
+        ]}
+      />
+      <WholeScreenMap
+        activePiece={activeId}
+        setActivePiece={setActiveId}
         boardPieces={boardPieces}
         gridSize={pixPerStep}
       />

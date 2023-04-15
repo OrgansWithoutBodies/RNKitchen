@@ -33,15 +33,7 @@ export function Grid({
       })}
       {new Array(nLines.y).fill(0).map((_, jj) => {
         const yPos = (jj + offsetPerc) * gridSize;
-        console.log(
-          "TEST123",
-          yPos,
-          offsetPerc,
-          jj,
-          gridSize,
-          lineColor,
-          lineWidth
-        );
+
         return (
           <Line
             key={`yLine-${jj}`}

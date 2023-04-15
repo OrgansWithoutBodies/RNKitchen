@@ -6,7 +6,8 @@ import {
   components as IOServerAPIComponents,
   paths as IOServerAPIPaths,
 } from "../schemas/out/schemas/src/ioserver.openapi";
-import { ProductId } from "../state/data.store";
+import { BoardPiece } from "../screens/locations/types";
+import { LocationId, ProductId } from "../state/data.store";
 import { HttpStatusCode } from "./responseCodes";
 // import type { Recipe, FoodRecipe } from "../schemas/out/tandoor.api";
 export type BrandedType<T = any, Brand extends string = string> = T & {
@@ -116,6 +117,11 @@ export type GrocyShoppingLocation =
 export type GrocyStockLocation = GrocyAPIComponentSchemas["StockLocation"];
 // TODO whats the difference between StockLocation
 export type GrocyTask = GrocyAPIComponentSchemas["Task"];
+export type GrocyTaskCategory = GrocyAPIComponentSchemas["TaskCategory"];
+export type GrocyChore = GrocyAPIComponentSchemas["Chore"];
+export type GrocyChoreLogEntry = GrocyAPIComponentSchemas["ChoreLogEntry"];
+export type GrocyChoreDetailsResponse =
+  GrocyAPIComponentSchemas["ChoreDetailsResponse"];
 // TODO whats the difference between StockLocation & StockEntry
 export type GrocyStockEntry = GrocyAPIComponentSchemas["StockEntry"];
 export type GrocyShoppingListItem =
@@ -155,3 +161,8 @@ export type IOServerPrintBarcodeListPost = IOServerPathsPrintBarcode["post"];
 // RecipeBuddy
 // TODO PR for openapi generator
 export type RecipeBuddyAPIPaths = "/api/recipes" | "/api/auth/login";
+export type StorageLocation = Omit<GrocyLocation, "id"> & {
+  parentLocationId?: LocationId;
+  piece: BoardPiece;
+  id: LocationId;
+};

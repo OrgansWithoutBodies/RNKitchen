@@ -1,5 +1,5 @@
 import { Store, StoreConfig } from "@datorama/akita";
-import { BoardPiece } from "../screens/locations/GridBoard";
+import { BoardPiece } from "../screens/locations/types";
 import {
   NaiveExistingProductDetails,
   GrocyLocation,
@@ -10,7 +10,18 @@ import {
   MealSet,
   BrandedString,
   BrandedNumber,
+  OffsetVec2,
+  ObjVec2,
+  StorageLocation,
+  HexStr,
 } from "../structs/types";
+import {
+  BACKYARD,
+  BACK_SHED,
+  gridSize,
+  KITCHEN,
+  PARTS_BIN_YELLOW_1,
+} from "./pieces";
 
 // TODO more specific
 export type DateString = BrandedString<"Date">;
@@ -28,14 +39,13 @@ type Holiday = {
 export type Person = { id: PersonId; name: string };
 export type ProductId = BrandedNumber<"Product Id">;
 export type EntryId = BrandedNumber<"Entry Id">;
-export type ProductsInLocation = Record<
-  LocationId,
-  { productId: ProductId; countAtLocation: number }[]
->;
+export type ProductList = { productId: ProductId; countAtLocation: number }[];
+export type ProductsInLocation = Record<LocationId, ProductList>;
 export type HTTPUrl = `http://${string}` | `https://${string}`;
 // TODO maybe add LocationCode here & treat it as purely a local object?
+// TODO "bay" - one shelf has (potentially) multiple bays
 // cons - would have to persist location data here
-export type StorageLocation = GrocyLocation & { parentLocationId?: LocationId };
+
 export interface DataState {
   family: Person[];
   boardPieces: BoardPiece[];
@@ -55,7 +65,12 @@ export interface DataState {
   existingProducts: Record<string, NaiveExistingProductDetails>;
   products: GrocyProduct[];
   locations: StorageLocation[];
+  // TODO
+  rooms: StorageLocation[];
+  storageBays: StorageLocation[];
   quantityUnits: GrocyQuantityUnit[];
+  // TODO link to cookbook?
+  books: Book[];
 }
 // TODO move these to barcodes
 export const LocCodePrefix = "LOC!" as const;
@@ -69,6 +84,11 @@ type LocContainers = [
   "BCAB5",
   "RCAB"
 ];
+type Book = {
+  isbn: string;
+
+  title: string;
+};
 type LocRows = ["01", "02", "03", "04"];
 export type LocCode<
   Container extends LocContainers[number],
@@ -89,7 +109,13 @@ const LocationCodes: Record<LocContainerCode<any, any>, LocCode<any, any>[]> = {
   "LCON!RCABCONT": ["LOC!RCAB001", "LOC!RCAB002", "LOC!RCAB003"],
   "LCON!KFRIDGE": ["LOC!KFRID001", "LOC!KFRID002", "LOC!KFRID003"],
 };
-
+const rect = (size: ObjVec2) => {
+  // size to array of offsets
+};
+const defaultPiece: BoardPiece = {
+  center: { x: gridSize * 5, y: gridSize * 7 },
+  shape: [{ x: 0, y: 0 }],
+};
 // TODO parenthetical specification - ie "1 (16 ounce) package"
 // TODO hijack tandoor's ingredient parser
 export function createInitialState(): DataState {
@@ -105,18 +131,14 @@ export function createInitialState(): DataState {
     ],
     stockEntries: [
       { product_id: 1, location_id: 0, amount: 3, id: 0 },
-      { product_id: 2, location_id: 0, amount: 2, id: 0 },
-      { product_id: 0, location_id: 3, amount: 4, id: 0 },
-      { product_id: 2, location_id: 1, amount: 5, id: 0 },
+      { product_id: 0, location_id: 0, amount: 3, id: 4 },
+      { product_id: 2, location_id: 0, amount: 2, id: 1 },
+      { product_id: 0, location_id: 3, amount: 4, id: 2 },
+      { product_id: 2, location_id: 1, amount: 5, id: 3 },
     ],
     recipes: [],
     shoppingList: ["Marie Calendars Pot Pies"],
-    locations: [
-      { id: 0, name: "Fridge", description: "test1234512312312" },
-      { id: 1, name: "Cabinet", description: "test1234512312312" },
-      { id: 2, name: "Other Cabinet", description: "test1234512312312" },
-      { id: 3, name: "Freezer", description: "test1234512312312" },
-    ],
+    locations: PARTS_BIN_YELLOW_1,
     quantityUnits: [],
     ioServerUrl: "http://192.168.88.242:8000",
     recipeBuddyUrl: "http://192.168.88.242:4000",
@@ -126,6 +148,7 @@ export function createInitialState(): DataState {
       { id: "1", name: "test mom" },
       { id: "2", name: "test dad" },
     ],
+    books: [],
   };
 }
 

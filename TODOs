@@ -1,3 +1,6 @@
 TODO be able to control watch timer for recipe steps
 handle back button
 "recipes with this ingredient"
+maybe would be useful to have a "serverless" mode where we just hook into grocy installs?
+excuse to use xstate
+'edible' trait - maybe indicates need to split off home management?

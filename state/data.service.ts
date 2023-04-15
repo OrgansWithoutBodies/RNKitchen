@@ -289,6 +289,12 @@ export class DataService {
     }
     this.dataStore.update({ mealPlan });
   }
+
+  public removeLocation(locationId: LocationId): void {
+    this.dataStore.update(({ locations }) => {
+      return { locations: locations.filter(({ id }) => id !== locationId) };
+    });
+  }
   /**
    * addLabelToPiece
    */
