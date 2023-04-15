@@ -3,125 +3,32 @@ import {
   BlendMode,
   SkRect,
   Canvas,
-  TouchHandler,
+  Circle,
 } from "@shopify/react-native-skia";
 import React, { useState } from "react";
-import {
-  Button,
-  Dimensions,
-  Pressable,
-  StyleSheet,
-  View,
-  Text,
-} from "react-native";
+import { Dimensions, Pressable, StyleSheet, View, Text } from "react-native";
+
+import { buildTouchHandler } from "./useBoard";
 
 import { dataService } from "../../state/data.service";
 import { useData } from "../../state/useAkita";
-import {
-  BoardVec2,
-  BrandedNumber,
-  HexStr,
-  ObjVec2,
-  ScreenVec2,
-} from "../../structs/types";
+import { HexStr } from "../../structs/types";
 
 import {
-  combineTwoVecs,
-  BoardPiece,
   GridBoard,
-  positionOffsets,
+  GridBoardPieceProps,
+  GridBoardStyleProps,
+  TileTemplate,
+  TileTemplateProps,
 } from "./GridBoard";
+import { ActiveItem, MoveWouldConflictHandler } from "./types";
 
-const screenCoordToBoardCoord = (
-  screenCoord: ScreenVec2,
-  gridSize: number
-): BoardVec2 => {
-  return {
-    x: Math.round(screenCoord.x / gridSize) * gridSize,
-    y: Math.round(screenCoord.y / gridSize) * gridSize,
-  } as BoardVec2;
-};
-const twoVecsSame = (vecA: ObjVec2, vecB: ObjVec2): boolean => {
-  return vecA.x === vecB.x && vecA.y === vecB.y;
-};
-const checkCellConflictsPiece = (
-  boardPieces: BoardPiece[],
-  cellPosition: BoardVec2,
-  gridSize: number
-) => {
-  const conflictedPieceIndex = boardPieces.findIndex((piece) => {
-    const { shape, center } = piece;
-    if (shape) {
-      const anyShapeOverlap = shape
-        .map((centerOffset) => {
-          const piecePosition = positionOffsets(
-            centerOffset,
-            piece.center,
-            gridSize
-          );
-          const overlap = twoVecsSame(piecePosition, cellPosition);
-          return overlap;
-        })
-        .reduce((prev, current) => prev || current);
-      return anyShapeOverlap;
-    }
-
-    return twoVecsSame(center, cellPosition);
-  });
-  if (conflictedPieceIndex === -1) {
-    return null;
-  }
-  console.log(conflictedPieceIndex);
-  return { conflictedPieceIndex };
-};
-const checkPieceConflictsPiece = (
-  boardPieces: BoardPiece[],
-  originalPiece: BoardPiece,
-  gridSize: number
-): {
-  conflictedPieceIndex: number;
-} | null => {
-  if (originalPiece.shape) {
-    for (const offset of originalPiece.shape) {
-      const offsetCenter = positionOffsets(
-        offset,
-        originalPiece.center,
-        gridSize
-      );
-      const conflict = checkCellConflictsPiece(
-        boardPieces,
-        offsetCenter,
-        gridSize
-      );
-      console.log("TEST123-overlap", conflict);
-
-      if (conflict) {
-        return conflict;
-      }
-    }
-    return null;
-  }
-
-  return checkCellConflictsPiece(boardPieces, originalPiece.center, gridSize);
-};
 const paint = Skia.Paint();
 paint.setAntiAlias(true);
 paint.setBlendMode(BlendMode.Multiply);
-type PiecePressHandler = (piece: BoardPiece) => void;
-type MoveWouldConflictHandler = (props: {
-  completeMove: () => void;
-  conflictPiece: BoardPiece;
-}) => void;
+
 // TODO hookify
 // pass board state to invoked area - maybe context handler?
-const useBoard: () => {
-  onMoveWouldConflict: MoveWouldConflictHandler;
-  onPiecePress: PiecePressHandler;
-  pieces: BoardPiece[];
-} = () => {
-  const onMoveWouldConflict = () => {};
-  return { onMoveWouldConflict };
-};
 const getRandomColor = (): HexStr => {
   const channelSize = 16;
   const charCode = new Array(6)
@@ -136,12 +43,7 @@ export function ControllerButton({
   backgroundColor,
   label,
   disabled = false,
-}: {
-  onPress: () => void;
-  backgroundColor: string;
-  label: string;
-  disabled?: boolean;
-}): JSX.Element {
+}: ControllerButtonType): JSX.Element {
   return (
     <Pressable
       disabled={disabled}
@@ -155,16 +57,131 @@ export function ControllerButton({
     </Pressable>
   );
 }
+
+const getDefaultTile: (rad: number, props: TileTemplateProps) => JSX.Element = (
+  rad,
+  { cx, cy, resolvedColor }
+) => {
+  return <Circle cx={cx} cy={cy} r={rad} color={resolvedColor} />;
+};
+
+export function WholeScreenMap({
+  activePiece,
+  setActivePiece,
+  boardPieces,
+  gridSize,
+  // TODO be able to pass custom handler & prioritize that over this flag
+  allowConflicts = false,
+}: { allowConflicts?: boolean } & ActiveItem &
+  GridBoardPieceProps &
+  Pick<GridBoardStyleProps, "gridSize">) {
+  const onMoveWouldConflict: MoveWouldConflictHandler = allowConflicts
+    ? ({ completeMove }) => {
+        completeMove();
+      }
+    : ({}) => {};
+  const { width, height } = Dimensions.get("window");
+  const nLines = {
+    x: Math.ceil(width / gridSize),
+    y: Math.ceil(height / gridSize),
+  };
+
+  const percRadiusPadding = 0.2;
+  const templateRadius = (gridSize * (1 - percRadiusPadding)) / 2;
+
+  const Tile: TileTemplate = (props) => getDefaultTile(templateRadius, props);
+  const touchHandler = buildTouchHandler(
+    boardPieces,
+    gridSize,
+    activePiece,
+    onMoveWouldConflict,
+    setActivePiece
+  );
+  return (
+    // TODO xstate machine for turning touch sequences into events
+    // TODO debounce events?
+    // TODO store layout
+    // TODO moveable/zoomable viewport
+    <Canvas style={{ flex: 1 }} onTouch={touchHandler}>
+      <GridBoard
+        activePiece={activePiece}
+        boardPieces={boardPieces}
+        offsetPerc={0.5}
+        nLines={nLines}
+        gridSize={gridSize}
+        height={height}
+        width={width}
+        Tile={Tile}
+      />
+    </Canvas>
+  );
+}
+function ActiveDetails({
+  activePiece,
+  boardPieces,
+}: {} & ActiveItem & GridBoardPieceProps): JSX.Element {
+  const activeGuard = (activePiece: number | null): activePiece is number => {
+    return activePiece !== null;
+  };
+  const isActive = activeGuard(activePiece);
+  const activeObj = isActive ? boardPieces[activePiece] : null;
+
+  const label = isActive ? boardPieces[activePiece].label : null;
+  const labelBlurb = isActive && label ? `| ${label}` : "";
+
+  const newLocal = activePiece && `Active Object: ${activePiece} ${labelBlurb}`;
+  return (
+    <View>
+      <Text style={{ color: "white" }}>{newLocal}</Text>
+    </View>
+  );
+}
+type ControllerButtonType = {
+  onPress: () => void;
+  backgroundColor: string;
+  label: string;
+  disabled?: boolean;
+};
+export function Controller({
+  activePiece,
+  setActivePiece,
+  boardPieces,
+  buttons,
+}: GridBoardPieceProps & ActiveItem & { buttons: ControllerButtonType[] }) {
+  return (
+    <View>
+      <ActiveDetails
+        activePiece={activePiece}
+        setActivePiece={setActivePiece}
+        boardPieces={boardPieces}
+      />
+      <View style={styles.controller}>
+        {buttons.map((button) => {
+          return (
+            <ControllerButton
+              {...button}
+              // disabled={activePiece === null}
+              // onPress={() => deselectActive()}
+              // backgroundColor={"yellow"}
+              // label="~"
+            />
+          );
+        })}
+      </View>
+    </View>
+  );
+}
 // each location has a schema of a boardstate with pantry entries
+// export const DemoDraggableScreen = () => {
 export const RoomMapScreen = () => {
   // for each storageLocation in room - for each (top-level) location, add a (object) with a dot which shows products in that location on tap
   const [
     { boardPieces, productsInLocations: locationProducts, locations, products },
   ] = useData(["productsInLocations", "locations", "products", "boardPieces"]);
-  const [size, setSize] = useState(1);
+  const pixPerStep = 50;
 
-  const [activePiece, setActivePiece] = useState<number | null>(null);
-
+  const [activePiece, setActivePiece] =
+    useState<ActiveItem["activePiece"]>(null);
   const addPiece = () => {
     dataService.addBoardPiece({
       center: { x: 0, y: 0 },
@@ -178,157 +195,54 @@ export const RoomMapScreen = () => {
     setActivePiece(boardPieces.length);
   };
   const removeActivePiece = () => {
-    console.log("TEST123-removing", activePiece);
     if (activePiece) {
       dataService.removeBoardPiece(activePiece);
     }
 
     setActivePiece(null);
   };
-
-  const onMoveWouldConflict: MoveWouldConflictHandler = ({}) => {};
-  const { width, height } = Dimensions.get("window");
-  const pixPerStep = 50;
-  const nLines = {
-    x: Math.ceil(width / pixPerStep),
-    y: Math.ceil(height / pixPerStep),
-  };
-
-  const onMove = (activeId: number, movePosition: BoardVec2) =>
-    dataService.moveBoardPiece(activeId, movePosition);
-  const onMoveActivePiece = (
-    screenCoord: ScreenVec2,
-    gridSize: number
-    // activePiece: number,
-    // boardPieces: BoardPiece[]
-  ) => {
-    if (!activePiece) {
-      return;
-    }
-    const activeObj = boardPieces[activePiece];
-    const movePosition = screenCoordToBoardCoord(screenCoord, gridSize);
-    const potentialObject = { ...activeObj, center: movePosition };
-    const conflicts = checkPieceConflictsPiece(
-      boardPieces,
-      potentialObject,
-      gridSize
-    );
-    const completeMove = () => onMove(activePiece, movePosition);
-    if (conflicts) {
-      const { conflictedPieceIndex } = conflicts;
-      const conflictPiece = boardPieces[conflictedPieceIndex];
-      if (conflictPiece) {
-        onMoveWouldConflict({ completeMove, conflictPiece });
-      }
-    } else {
-      completeMove();
-    }
-  };
-  const touchHandler: TouchHandler = (val) => {
-    const touches = val[0];
-    if (!touches) {
-      return;
-    }
-    const firstTouch = touches[0] as ObjVec2 | undefined as
-      | ScreenVec2
-      | undefined;
-    if (!firstTouch) {
-      return;
-    }
-
-    if (activePiece) {
-      if (touches) {
-        if (touches.length === 1) {
-          const onCheckPieceLocked = (activePiece: number) => false;
-          // TODO this is supposed to be a way to limit the board positions this piece can be dragged todragAllowed
-          const onDragAllowed = () => true;
-
-          const isLocked = onCheckPieceLocked(activePiece);
-          const dragAllowed = onDragAllowed();
-          if (dragAllowed && !isLocked) {
-            onMoveActivePiece(firstTouch, pixPerStep);
-          }
-        }
-      }
-    } else {
-      if (touches) {
-        const onTouchPiece = (pieceIndex: number) => {
-          setActivePiece(pieceIndex);
-        };
-        const onPressWithoutActive = () => {
-          const movePosition = screenCoordToBoardCoord(firstTouch, pixPerStep);
-
-          const hits = checkCellConflictsPiece(
-            boardPieces,
-            movePosition,
-            pixPerStep
-          );
-          // console.log("TEST123-no active", hits);
-          if (hits) {
-            const { conflictedPieceIndex } = hits;
-            onTouchPiece(conflictedPieceIndex);
-          }
-        };
-        onPressWithoutActive();
-      }
-    }
-  };
-  const activeGuard = (activePiece: number | null): activePiece is number => {
-    return activePiece !== null;
-  };
-  const isActive = activeGuard(activePiece);
-  const activeObj = isActive ? boardPieces[activePiece] : null;
-
-  const rect: SkRect = { height, width, x: 0, y: 0 };
-  const label = isActive ? boardPieces[activePiece].label : null;
-  const labelBlurb = isActive && label ? `| ${label}` : "";
+  const deselectActive = () => setActivePiece(null);
+  const addLabelToPiece = () =>
+    dataService.addLabelToPiece(activePiece!, "TEST");
   return (
-    // TODO xstate machine for turning touch sequences into events
-    // TODO debounce events?
-    // TODO store layout
-    // TODO moveable/zoomable viewport
+    // TODO why does making this into a view break the canvas
     <>
-      <View>
-        <Text style={{ color: "white" }}>
-          {activePiece && `Active Object: ${activePiece} ${labelBlurb}`}
-        </Text>
-      </View>
-      <View style={styles.controller}>
-        <ControllerButton
-          disabled={activePiece === null}
-          onPress={() => setActivePiece(null)}
-          backgroundColor={"yellow"}
-          label="~"
-        />
-        <ControllerButton
-          disabled={activePiece === null}
-          // todo typeguard for this active piece
-          onPress={() => dataService.addLabelToPiece(activePiece!, "TEST")}
-          backgroundColor={"blue"}
-          label="?"
-        />
-        <ControllerButton
-          onPress={() => addPiece()}
-          backgroundColor={"green"}
-          label="+"
-        />
-        <ControllerButton
-          onPress={() => removeActivePiece()}
-          backgroundColor={"red"}
-          label="-"
-        />
-      </View>
-      <Canvas style={{ flex: 1 }} onTouch={touchHandler}>
-        <GridBoard
-          activePiece={activePiece}
-          pieces={boardPieces}
-          offsetPerc={0.5}
-          nLines={nLines}
-          gridSize={pixPerStep}
-          height={height}
-          width={width}
-        />
-      </Canvas>
+      <Controller
+        activePiece={activePiece}
+        setActivePiece={setActivePiece}
+        boardPieces={boardPieces}
+        buttons={[
+          {
+            disabled: activePiece === null,
+            onPress: () => deselectActive(),
+            backgroundColor: "yellow",
+            label: "~",
+          },
+          {
+            disabled: activePiece === null,
+            // todo typeguard for this active piece
+            onPress: () => addLabelToPiece(),
+            backgroundColor: "blue",
+            label: "?",
+          },
+          {
+            onPress: () => addPiece(),
+            backgroundColor: "green",
+            label: "+",
+          },
+          {
+            onPress: () => removeActivePiece(),
+            backgroundColor: "red",
+            label: "-",
+          },
+        ]}
+      />
+      <WholeScreenMap
+        activePiece={activePiece}
+        setActivePiece={setActivePiece}
+        boardPieces={boardPieces}
+        gridSize={pixPerStep}
+      />
     </>
   );
 };

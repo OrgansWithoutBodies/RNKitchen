@@ -1,62 +1,92 @@
-import { Circle, Line } from "@shopify/react-native-skia";
+import { Group } from "@shopify/react-native-skia";
 import React from "react";
-import { BoardVec2, HexStr, ObjVec2, OffsetVec2 } from "../../structs/types";
+import { BoardVec2, HexStr, ObjVec2 } from "../../structs/types";
 import { Grid } from "./Grid";
-//   TODO handle different piece shapes
-export type BoardPiece = {
-  center: BoardVec2;
-  shape?: OffsetVec2[];
-  color?: HexStr;
-  label?: string;
-};
-export const combineTwoVecs = (vecA: ObjVec2, vecB: ObjVec2) => {
-  return { x: vecA.x + vecB.x, y: vecA.y + vecB.y };
-};
-export const multiplyScalar = (vecA: ObjVec2, scalar: number) => {
-  return { x: vecA.x * scalar, y: vecA.y * scalar };
-};
-export const positionOffsets = (
-  offset: OffsetVec2,
-  center: BoardVec2,
-  gridSize: number
-): BoardVec2 => {
-  return combineTwoVecs(multiplyScalar(offset, gridSize), center) as BoardVec2;
-};
+import { BoardPiece } from "./types";
+import { combineTwoVecs, positionOffsets } from "./vecs";
+
 // const activeGuard=(piece):piece is active
 const activeColor = "white";
 const defaultColor = "green";
-export function GridBoard({
-  pieces,
-  nLines,
-  gridSize,
-  height,
-  width,
-  activePiece = null,
-  offsetPerc = 0,
-}: {
-  pieces: BoardPiece[];
+export type GridBoardPieceProps = {
+  boardPieces: BoardPiece[];
+  activePiece?: number | null;
+};
+
+export type GridBoardStyleProps = {
   nLines: ObjVec2;
   gridSize: number;
   height: number;
   width: number;
   offsetPerc?: number;
-  activePiece?: number | null;
-  //   TODO handle
-  // onPieceTouch/
-  // onPieceDrag/
-  // onPieceMove/
-  // what to do when dragging piece into spot occupied by other pieces,
-  // here's where logic for capture/prevent movement takes place
-  // onDragConflicts/
-  // etc
-}): JSX.Element {
-  const percRadiusPadding = 0.2;
-  const padding = gridSize * percRadiusPadding;
-  if (!pieces) {
-    return <></>;
-  }
+};
+type CompassPoint = "N" | "E" | "S" | "W";
+
+export type TileTemplateProps = {
+  // neighboringTiles only cares about own shape for now
+  neighboringTiles: Record<CompassPoint, boolean>;
+  cx: number;
+  cy: number;
+
+  resolvedColor: HexStr;
+};
+export type TileTemplate = (props: TileTemplateProps) => JSX.Element;
+const getNeighboringTiles = (
+  elements: BoardVec2[],
+  gridSize: number,
+  elementIndex: number
+) => {
+  const element = elements[elementIndex];
+  return {
+    E: elements.includes(
+      combineTwoVecs(element, {
+        x: -1 * gridSize,
+        y: 0,
+      } as BoardVec2) as BoardVec2
+    ),
+    N: elements.includes(
+      combineTwoVecs(element, {
+        x: 0,
+        y: 1 * gridSize,
+      } as BoardVec2) as BoardVec2
+    ),
+    S: elements.includes(
+      combineTwoVecs(element, {
+        x: 0,
+        y: -1 * gridSize,
+      } as BoardVec2) as BoardVec2
+    ),
+    W: elements.includes(
+      combineTwoVecs(element, {
+        x: 1 * gridSize,
+        y: 0,
+      } as BoardVec2) as BoardVec2
+    ),
+  };
+};
+export function GridBoard({
+  boardPieces,
+  nLines,
+  gridSize,
+  height,
+  width,
+  Tile,
+  activePiece,
+  offsetPerc = 0,
+}: GridBoardStyleProps &
+  GridBoardPieceProps & {
+    Tile: TileTemplate;
+    // TODO handle
+    // onPieceTouch/
+    // onPieceDrag/
+    // onPieceMove/
+    // what to do when dragging piece into spot occupied by other pieces,
+    // here's where logic for capture/prevent movement takes place
+    // onDragConflicts/
+    // etc
+  }): JSX.Element {
   return (
-    <>
+    <Group>
       <Grid
         offsetPerc={offsetPerc}
         nLines={nLines}
@@ -64,7 +94,7 @@ export function GridBoard({
         height={height}
         width={width}
       />
-      {pieces.map((piece, ii) => {
+      {boardPieces.map((piece, ii) => {
         const isActive = activePiece === ii;
         const piecePassiveColor = piece.color || defaultColor;
         const elements = piece.shape
@@ -74,20 +104,23 @@ export function GridBoard({
           : [piece.center];
         return (
           <>
-            {elements.map((element) => {
+            {elements.map((element, ii) => {
               const { x: cx, y: cy } = element;
               return (
-                <Circle
+                <Tile
+                  key={`tile-${ii}`}
+                  neighboringTiles={getNeighboringTiles(elements, gridSize, ii)}
+                  resolvedColor={
+                    isActive ? (activeColor as any) : piecePassiveColor
+                  }
                   cx={cx}
                   cy={cy}
-                  r={(gridSize - padding) / 2}
-                  color={isActive ? activeColor : piecePassiveColor}
                 />
               );
             })}
           </>
         );
       })}
-    </>
+    </Group>
   );
 }

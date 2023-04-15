@@ -15,10 +15,6 @@ export function AddToMealPlan({
   options: ModalOption[];
   setSelected: (recipeId: RecipeID) => void;
 }): JSX.Element {
-  console.log(
-    "Test123-meal",
-    modalRef.current ? modalRef.current.state.visible : "none"
-  );
   // TODO add "please add some recipes first"
   return (
     <>

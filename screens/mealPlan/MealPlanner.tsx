@@ -101,7 +101,6 @@ export default function MealPlanner() {
         markingType={"multi-dot"}
         markedDates={mealPlan}
         onDayPress={(day) => {
-          console.log("TEST123", day);
           setActiveDate(day);
         }}
       />

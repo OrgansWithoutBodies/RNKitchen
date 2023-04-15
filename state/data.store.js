@@ -41,6 +41,7 @@ var LocationCodes = {
 // TODO hijack tandoor's ingredient parser
 function createInitialState() {
     return {
+        boardPieces: [],
         token: null,
         name: null,
         existingProducts: {},

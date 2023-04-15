@@ -1,4 +1,4 @@
-import { Line } from "@shopify/react-native-skia";
+import { Group, Line } from "@shopify/react-native-skia";
 import React from "react";
 import { ObjVec2 } from "../../structs/types";
 
@@ -18,11 +18,12 @@ export function Grid({
   const lineColor = "white";
   const lineWidth = 3;
   return (
-    <>
+    <Group>
       {new Array(nLines.x).fill(0).map((_, ii) => {
         const xPos = (ii + offsetPerc) * gridSize;
         return (
           <Line
+            key={`xLine-${ii}`}
             p1={{ x: xPos, y: 0 }}
             p2={{ x: xPos, y: height }}
             color={lineColor}
@@ -32,8 +33,18 @@ export function Grid({
       })}
       {new Array(nLines.y).fill(0).map((_, jj) => {
         const yPos = (jj + offsetPerc) * gridSize;
+        console.log(
+          "TEST123",
+          yPos,
+          offsetPerc,
+          jj,
+          gridSize,
+          lineColor,
+          lineWidth
+        );
         return (
           <Line
+            key={`yLine-${jj}`}
             p1={{ x: 0, y: yPos }}
             p2={{ x: width, y: yPos }}
             color={lineColor}
@@ -41,6 +52,6 @@ export function Grid({
           />
         );
       })}
-    </>
+    </Group>
   );
 }

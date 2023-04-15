@@ -31,6 +31,7 @@ var DataQuery = /** @class */ (function (_super) {
         var _this = _super.call(this, store) || this;
         _this.store = store;
         _this.shoppingList = _this.select("shoppingList");
+        _this.boardPieces = _this.select("boardPieces");
         _this.existingProducts = _this.select("existingProducts");
         _this.recipes = _this.select("recipes");
         _this.locations = _this.select("locations");

@@ -244,6 +244,37 @@ var DataService = /** @class */ (function () {
     DataService.prototype.setPlannedMeals = function (mealPlan) {
         this.dataStore.update({ mealPlan: mealPlan });
     };
+    DataService.prototype.addBoardPiece = function (boardPiece) {
+        this.dataStore.update(function (_a) {
+            var boardPieces = _a.boardPieces;
+            return ({
+                boardPieces: __spreadArray(__spreadArray([], boardPieces, true), [boardPiece], false)
+            });
+        });
+    };
+    DataService.prototype.removeBoardPiece = function (boardPieceIndex) {
+        this.dataStore.update(function (_a) {
+            var boardPieces = _a.boardPieces;
+            var newBoardPieces = __spreadArray([], boardPieces, true).filter(function (_, ii) { return ii !== boardPieceIndex; });
+            return {
+                boardPieces: newBoardPieces
+            };
+        });
+    };
+    // TODO maybe make boardpiece center the cell index?
+    DataService.prototype.moveBoardPiece = function (pieceIndex, center) {
+        this.dataStore.update(function (_a) {
+            var boardPieces = _a.boardPieces;
+            var givenPiece = boardPieces[pieceIndex];
+            var movedPiece = __assign(__assign({}, givenPiece), { center: center });
+            var newBoardPieces = __spreadArray([], boardPieces, true);
+            newBoardPieces[pieceIndex] = movedPiece;
+            // console.log("TEST123", pieceIndex, newBoardPieces);
+            return {
+                boardPieces: newBoardPieces
+            };
+        });
+    };
     DataService.convertRecipeToMeal = function (recipe) { };
     // TODO what do if mealslot is already taken
     DataService.prototype.addRecipeToPlan = function (date, recipeID, mealSlot) {
@@ -261,6 +292,21 @@ var DataService = /** @class */ (function () {
             mealPlan[date] = { dots: [meal] };
         }
         this.dataStore.update({ mealPlan: mealPlan });
+    };
+    /**
+     * addLabelToPiece
+     */
+    DataService.prototype.addLabelToPiece = function (pieceIndex, label) {
+        this.dataStore.update(function (_a) {
+            var boardPieces = _a.boardPieces;
+            var givenPiece = boardPieces[pieceIndex];
+            var labeledPiece = __assign(__assign({}, givenPiece), { label: label });
+            var newBoardPieces = __spreadArray([], boardPieces, true);
+            newBoardPieces[pieceIndex] = labeledPiece;
+            return {
+                boardPieces: newBoardPieces
+            };
+        });
     };
     return DataService;
 }());
